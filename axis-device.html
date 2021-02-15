@@ -44,15 +44,19 @@
     <div class="form-row">
         <label for="node-input-action"><i class="icon-tag"></i> Action</label>
         <select id="node-input-action">
-            <option value="Info">Info</option>
-            <option value="HTTP GET">VAPIX</option>
-            <option value="Get Properties">Get Properties</option>
-            <option value="Set Properties">Set Properties</option>
+            <option value="Device Info">Device Info</option>
+            <option value="Network settings">Network settings</option>
+            <option value="HTTP Get">HTTP Get</option>
+            <option value="HTTP Post">HTTP Post</option>
 		</select>
 	</div>
     <div class="form-row">
-        <label for="node-input-data"><i class="icon-tag"></i> Options</label>
-        <input type="text" id="node-input-data" placeholder="Optional override msg.payload">
+        <label for="node-input-cgi"><i class="icon-tag"></i> CGI</label>
+        <input type="text" id="node-input-cgi" placeholder="">
+    </div>
+    <div class="form-row">
+        <label for="node-input-data"><i class="icon-tag"></i> Data</label>
+        <input type="text" id="node-input-data" placeholder="">
     </div>
 </script>
 
@@ -63,7 +67,8 @@
         defaults: {
 			account: {type:"Axis Device Account"},
 			address: {value:""},
-			action: { value:"Info"},
+			action: { value:"Device Info"},
+			cgi: { value:""},
 			data: {value:""}
         },
 		icon: "camera-icon2.png",
