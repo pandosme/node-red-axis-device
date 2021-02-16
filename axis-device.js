@@ -1,22 +1,6 @@
 const Axis = require('./Axis.js');
 
 module.exports = function(RED) {
-	function Axis_Device_Account(config) {
-		RED.nodes.createNode(this,config);
-//		console.log("Axis_Device_Account",config);
-		this.name = config.name;
-		this.protocol = config.protocol;
-	}
-	
-	RED.nodes.registerType("Axis Device Account",Axis_Device_Account,{
-		defaults: {
-			name: {type: "text"},
-			protocol: {type:"text"}
-		},
-		credentials: {
-			password: {type:"password"}
-		}		
-	});
 	
     function Axis_Device(config) {
 		RED.nodes.createNode(this,config);
