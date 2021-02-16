@@ -10,7 +10,6 @@ module.exports = function(RED) {
 		this.action = config.action;
 		this.cgi = config.cgi;
 		this.data = config.data;
-		this.format = config.format;
 		var node = this;
 		node.on('input', function(msg) {
 			var account = RED.nodes.getNode(node.account);
@@ -22,39 +21,34 @@ module.exports = function(RED) {
 			}
 			if( !device.user || device.user.length < 2){
 				msg.error = true;
-				msg.payload = "Invalid input:  Missing user name";
+				msg.payload = "Invalid user account name";
+				node.warn(msg.payload);
 				node.send(msg);
 				return;
 			}
 			if( !device.password || device.password.length < 2){
 				msg.error = true;
-				msg.payload = "Invalid input: Missing password";
+				msg.payload = "Invalid account password";
+				node.warn(msg.payload);
 				node.send(msg);
 				return;
 			}
-			if( !device.url || device.url.length < 5) {
+			if( !device.url || device.url.length < 3) {
 				msg.error = true;
-				msg.payload = "Invalid input: Missing device address";
+				msg.payload = "Invalid device address";
+				node.warn(msg.payload);
 				node.send(msg);
 				return;
 			}
-//			var format = node.format;
 			var action = msg.action || node.action;
 			var payload = node.data || msg.payload;
-			var cgi = node.cgi || msg.topic;
-/*			
-			console.log("Axis_Device ",{
-				action: action,
-				cgi: cgi,
-				payload: payload
-			});
-*/			
 			msg.error = false;
 			switch( action ) {
 				case "Device Info":
 					Axis.DeviceInfo( device, function(error, response ) {
 						msg.error = error;
 						msg.payload = response;
+						node.warn("Device request failed");
 						node.send(msg);
 					});
 				break;
@@ -67,7 +61,6 @@ module.exports = function(RED) {
 					}
 					Axis.Post( device, "/axis-cgi/network_settings.cgi", body, function(error, response ) {
 						msg.error = error;
-//						console.log("Network settings Response", error, response);
 						msg.payload = response;
 						if( typeof msg.payload === "string" ) { 
 							var json = JSON.parse(response);
@@ -81,7 +74,26 @@ module.exports = function(RED) {
 						node.send(msg);
 					});
 				break;
+				
+				case "Reboot":
+					msg.error = "Not yet implemented";
+					node.warn(msg.error);
+					node.send(msg);
+				break;
+
+				case "Upgrade firmware":
+					msg.error = "Not yet implemented";
+					node.warn(msg.error);
+					node.send(msg);
+				break;
+				
 				case "HTTP Get":
+					var cgi = node.cgi || msg.cgi;
+					if( !cgi || cgi.length < 2 ) {
+						msg.error = "Invalid cgi";
+						node.warn(msg.error);
+						return;
+					}
 					Axis.Get( device, cgi, function(error, response ) {
 						msg.error = error;
 						msg.payload = response;
@@ -94,6 +106,18 @@ module.exports = function(RED) {
 					});
 				break;
 				case "HTTP Post":
+					var cgi = node.cgi || msg.cgi;
+					if( !cgi || cgi.length < 2 ) {
+						msg.error = "Invalid cgi";
+						node.warn(msg.error);
+						return;
+					}
+					if(!payload) {
+						msg.error = "Invalid payload";
+						node.warn(msg.error);
+						node.send(msg);
+						return;
+					}
 					Axis.Post( device, cgi, payload, function(error, response ) {
 						msg.error = error;
 						msg.payload = response;
@@ -106,20 +130,21 @@ module.exports = function(RED) {
 					});
 				break;
 				default:
-					msg.error = true;
-					msg.payload = "Invalid action (" + action+ ")";
+					msg.error = "Invalid action";
+					node.warn(msg.error);
 					node.send(msg);
 					return;
 			}
         });
     }
 	
-    RED.nodes.registerType("Axis Device",Axis_Device,{
+    RED.nodes.registerType("axis-device",Axis_Device,{
 		defaults: {
             name: {type:"text"},
-			account: {type:"Axis Device Account"},
+			account: {type:"axis-config"},
 			address: {type:"text"},
 			data: {type: "text"},
+			cgi: {type: "text"},
 			action: { type:"text" }
 		}		
 	});

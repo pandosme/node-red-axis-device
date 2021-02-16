@@ -20,11 +20,11 @@
     RED.nodes.registerType('axis-config',{
         category: 'config',
         defaults: {
-			name: {value:"",required: true},
+			name: {value:""},
 			protocol: {value:"http"}
         },
 		credentials: {
-			password: {type:"password",required: true}
+			password: {type:"password"}
         },
         label: function() {
             return this.name || "Axis Config Node";

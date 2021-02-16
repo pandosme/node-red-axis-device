@@ -1,4 +1,4 @@
-<script type="text/x-red" data-template-name="Axis Device">
+<script type="text/x-red" data-template-name="axis-device">
     <div class="form-row">
         <label for="node-input-account"><i class="icon-tag"></i> Credentials</label>
         <input type="text" id="node-input-account">
@@ -12,22 +12,24 @@
         <select id="node-input-action">
             <option value="Device Info">Device Info</option>
             <option value="Network settings">Network settings</option>
+            <option value="Reboot">Reboot</option>
+            <option value="Upgrade firmware">Upgrade firmware</option>
             <option value="HTTP Get">HTTP Get</option>
             <option value="HTTP Post">HTTP Post</option>
 		</select>
 	</div>
-    <div class="form-row cgi_request">
+    <div class="form-row cgi_get">
         <label for="node-input-cgi"><i class="icon-tag"></i> CGI</label>
-        <input type="text" id="node-input-cgi" placeholder="">
+        <input type="text" id="node-input-cgi" placeholder="/axis-cgi/... (alt. inject msg.cgi)">
     </div>
-    <div class="form-row cgi_request">
+    <div class="form-row cgi_post">
         <label for="node-input-data"><i class="icon-tag"></i> Data</label>
-        <input type="text" id="node-input-data" placeholder="">
+        <input type="text" id="node-input-data" placeholder="alt. inject msg.payload">
     </div>
 </script>
 
 <script type="text/javascript">
-RED.nodes.registerType('Axis Device',{
+RED.nodes.registerType('axis-device',{
 	category: 'Axis',
 	color: '#FFFF00',
 	defaults: {
@@ -41,116 +43,87 @@ RED.nodes.registerType('Axis Device',{
 	inputs:1,
 	outputs:1,
 	label: function() {
-		return this.name || this.action;
+		return this.action || "Axis Device";
 	},
 	oneditprepare: function() {
 		$("#node-input-action").change(function() {
 			var action = $("#node-input-action").val();
+			console.log("oneditprepare");
+			$(".cgi_request").hide();
 			switch (action) {
 				case "Device Info":
-				case "Device Info":
-					$("#cgi_request").hide();
-					$("#cgi_request").hide();
+					$(".cgi_get").hide();
+					$(".cgi_post").hide();
+				break;
+				case "Network settings":
+					$(".cgi_get").hide();
+					$(".cgi_post").hide();
+				break;
+				case "Reboot":
+					$(".cgi_get").hide();
+					$(".cgi_post").hide();
+				break;
+				case "Upgrade firmware":
+					$(".cgi_get").hide();
+					$(".cgi_post").hide();
 				break;
 				case "HTTP Get":
-				case "HTTP Post:
-					$("#cgi_request").show();
-					$("#cgi_request").show();
+					$(".cgi_get").show();
+					$(".cgi_post").hide();
+				break;
+				case "HTTP Post":
+					$(".cgi_get").show();
+					$(".cgi_post").show();
 				break;
 			}
-		}
+		});
 	}
 });
 </script>
 
-<script type="text/x-red" data-help-name="Axis Device">
-	<h3>Axis Device</h3>
+<script type="text/x-red" data-help-name="axis-device">
+	<h2>Axis Device</h2>
 	<h3>Inputs:</h3>
 	<dl class="message-properties">
 		<dt>credentials<span class="property-type">configuration</span></dt>
-		<dd>Camera credentials are required.  User and password may be overriden by 
-		<code>msg.user</code> and <code>msg.password</code></dd>
+		<dd>Camera credentials user and password is required.<br/>
+		Use <code>msg.user</code> and <code>msg.password</code> to override config</dd>
 	</dl>	
 	
 	<dl class="message-properties">
 		<dt>address<span class="property-type">string</span></dt>
-		<dd>IP address or FQDN.  Address can be overriden using <code>msg.address</code></dd>
+		<dd>IP address or FQDN.<br/>
+		Use <code>msg.address</code> to override config</dd>
 	</dl>	
 
 	<dl class="message-properties">
-		<dt>action<span class="property-type">string</span></dt>
-		<dd>See list below.</dd>
+		<dt>Action<span class="property-type">string</span></dt>
+		<dd>Use <code>msg.action</code> to override config</dd>
 	</dl>	
 
 	<dl class="message-properties">
-		<dt>msg.topic<span class="property-type">string | object</span></dt>
-		<dd>Only used in selected actions</dd>
+		<dt>CGI<span class="property-type">string</span></dt>
+		<dd>For VAPIX HTTP Get and Post.  See Axis VAPIX documentation.  Use <code>msg.cgi</code> to override config<br/>
+		For Post, use <code>msg.payload</code> to override Data config.  Objects will be automatically converted to JSON.</dd>
 	</dl>	
 
 	<dl class="message-properties">
-		<dt>msg.url<span class="property-type">string | object</span></dt>
-		<dd>Only used in HTTP POST</dd>
-	</dl>	
-
-	<dl class="message-properties">
-		<dt>msg.payload<span class="property-type">string | object</span></dt>
-		<dd>Payload depends on the action.  Setting <code>Payload</code> in the configuration will override 
-		<code>msg.payload</code>.  Only use override when there is only one possible payload</dd>
+		<dt>Data<span class="property-type">string | object | buffer</span></dt>
+		<dd>Depends on action<br/>
+		Use <code>msg.payload</code> to override config.
+		</dd>
 	</dl>	
 
 	<h3>Outputs:</h3>
 	<dl class="message-properties">
-		<dt>msg.error<span class="property-type">bool</span></dt>
-		<dd>True if the action failed.  <code>msg.payload</code> may include clues on what was wrong.</dd>
+		<dt>msg.error<span class="property-type">bool | string</span></dt>
+		<dd>On success, error will be <code>false</code><br/>
+		On failure, error will be <code>true</code> or message string</dd>
 	</dl>	
 
 	<dl class="message-properties">
-		<dt>msg.payload<span class="property-type">object | string | buffer</span></dt>
-		<dd>Depends on action and output format</dd>
+		<dt>msg.payload<span class="property-type">bool | string | buffer</span></dt>
+		<dd>Depends on action</dd>
 	</dl>	
 
-	<h3>Info</h3>
-	<p>Generel information about the camera</p>
-	<dl class="message-properties">
-		<dt>Output payload<span class="property-type">Object</span></dt>
-		<dd> Camera properties</dd>
-	</dl>	
-	
-	<h3>HTTP GET</h3>
-	<p>To be used for VAPIX or ACAP API requests not supported by this node</p>
-	<dl class="message-properties">
-		<dt>payload<span class="property-type">string</span></dt>
-		<dd>The URL path <i>e.g. /local/packages/someACAP/someAPI?name=john&age=31</i></dd>
-	</dl>	
-
-	<h3>HTTP POST</h3>
-	<p>To be used for VAPIX or ACAP API requests not supported by this node</p>
-	<dl class="message-properties">
-		<dt>url<span class="property-type">string</span></dt>
-		<dd>HTTP path to post data <i>e.g. /local/packages/someACAP/somePostAPI</i></dd>
-	</dl>	
-
-	<dl class="message-properties">
-		<dt>payload<span class="property-type">string</span></dt>
-		<dd>The body to post</dd>
-	</dl>	
-
-	<h3>GET PROPERTY</h3>
-	<p>Read and parses the response to VAPIX param.cgi</p>
-	<dl class="message-properties">
-		<dt>payload<span class="property-type">string</span></dt>
-		<dd> The camera parameter group path (without 'root.').</dd>
-		<p><i>Examples: <code>network</code> or <code>network.eth0</code></i></p>
-		<p>Common Groups: properties, brand, system, image, imagesource, audio, network, ptz, storage, time<br/>
-		<i>See the VAPIX parameter documentation.</i></p>
-	</dl>	
-
-	<h3>SET PROPERTY</h3>
-	<p>Sets and parses the response to VAPIX param.cgi</p>
-	<dl class="message-properties">
-		<dt>topic<span class="property-type">string</span></dt>
-		<dd> The Axis parameter group path (without root).  Check VAPIX documentation.</dd>
-		<dt>payload<span class="property-type">object</span></dt>
-		<dd> An object with the properties to be set.  Note that sub group objects will NOT be set</dd>
-	</dl>	
 </script>
