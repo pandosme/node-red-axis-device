@@ -1,4 +1,4 @@
-const Axis = require('./Axis.js');
+const vapix = require('./vapix.js');
 
 module.exports = function(RED) {
 	
@@ -45,10 +45,11 @@ module.exports = function(RED) {
 			msg.error = false;
 			switch( action ) {
 				case "Device Info":
-					Axis.DeviceInfo( device, function(error, response ) {
+					vapix.DeviceInfo( device, function(error, response ) {
 						msg.error = error;
+						if(msg.error)
+							node.warn(error);
 						msg.payload = response;
-						node.warn("Device request failed");
 						node.send(msg);
 					});
 				break;
@@ -59,8 +60,10 @@ module.exports = function(RED) {
 						"method": "getNetworkInfo",
 						"params":{}
 					}
-					Axis.Post( device, "/axis-cgi/network_settings.cgi", body, function(error, response ) {
+					vapix.Post( device, "/axis-cgi/network_settings.cgi", body, function(error, response ) {
 						msg.error = error;
+						if(msg.error)
+							node.warn("Network info request failed");
 						msg.payload = response;
 						if( typeof msg.payload === "string" ) { 
 							var json = JSON.parse(response);
@@ -76,15 +79,30 @@ module.exports = function(RED) {
 				break;
 				
 				case "Reboot":
-					msg.error = "Not yet implemented";
-					node.warn(msg.error);
-					node.send(msg);
+					vapix.Reboot( device, function( error, response) {
+						msg.payload = response;
+						msg.error = error;
+						if( msg.error ) {
+							node.warn("Device reboot failed");
+						}
+						node.send(msg);
+					});
 				break;
 
 				case "Upgrade firmware":
-					msg.error = "Not yet implemented";
-					node.warn(msg.error);
-					node.send(msg);
+					node.status({fill:"blue",shape:"dot",text:"Updating firmware..."});
+					//Payload can be string with full filenem path or a buffer to the file
+					vapix.updateFirmware( camera , payload, function(error, response ) {
+						msg.payload = response;
+						msg.error = error;
+						if(msg.error) {
+							node.warn("Device upgrade failed");
+							node.status({fill:"red",shape:"dot",text:"Failed"});
+						} else {
+							node.status({fill:"green",shape:"dot",text:"Failed"});
+						}
+						node.send(msg);
+					});
 				break;
 				
 				case "HTTP Get":
@@ -94,7 +112,7 @@ module.exports = function(RED) {
 						node.warn(msg.error);
 						return;
 					}
-					Axis.Get( device, cgi, function(error, response ) {
+					vapix.Get( device, cgi, "text", function(error, response ) {
 						msg.error = error;
 						msg.payload = response;
 						if( typeof msg.payload === "string" ) {
@@ -118,7 +136,7 @@ module.exports = function(RED) {
 						node.send(msg);
 						return;
 					}
-					Axis.Post( device, cgi, payload, function(error, response ) {
+					vapix.Post( device, cgi, payload, function(error, response ) {
 						msg.error = error;
 						msg.payload = response;
 						if( typeof msg.payload === "string" ) {

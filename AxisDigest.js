@@ -5,7 +5,7 @@ const FormData = require("form-data");
 
 var exports = module.exports = {};
 
-exports.get = function( device, path, callback ) {
+exports.get = function( device, path, resonseType, callback ) {
 //	console.log("AxisDigest.get", device, path );
 
 	var client = got.extend({
@@ -33,11 +33,15 @@ exports.get = function( device, path, callback ) {
 	
 	(async () => {
 		try {
-			const response = await client.get( device.url+path,{https:{rejectUnauthorized: false} });
+			const response = await client.get( device.url+path,{
+				responseType: resonseType,
+				https:{rejectUnauthorized: false}
+			});
 			callback(false, response.body );
 		} catch (error) {
 			console.log("HTTP GET Error:", error);
-			callback(error, response.body );
+//			console.log(response);
+			callback(error, error );
 		}
 	})();
 
@@ -100,7 +104,7 @@ exports.post = function( device, path, body, callback ) {
 			callback(false, response.body );
 		} catch (error) {
 			console.log("Axis Digest Post" ,error, response.body);
-			callback(error, response.body  );
+			callback(error, error  );
 		}
 	})();
 }
@@ -171,7 +175,6 @@ exports.upload = function( device, type, filename, buffer, callback ) {
 			return;
 	}
 
-
 	var formJSON = JSON.stringify(formData);
 
 	var client = got.extend({
@@ -224,8 +227,7 @@ exports.upload = function( device, type, filename, buffer, callback ) {
 			callback(false, response.body );
 		} catch (error) {
 			console.log(error);
-			console.log(response);
-			callback(error, response.body);
+			callback(error, error);
 		}
 	})();
 

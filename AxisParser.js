@@ -2,7 +2,7 @@
 var exports = module.exports = {};
 
 exports.param2json = function( data ) {
-	console.log("AxisParser.param2json", data );
+//	console.log("AxisParser.param2json", data );
 
 	var rows = data.split('\n');
 	var result = {};

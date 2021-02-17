@@ -31,7 +31,7 @@
 <script type="text/javascript">
 RED.nodes.registerType('axis-device',{
 	category: 'Axis',
-	color: '#FFFF00',
+	color: '#FFCC33',
 	defaults: {
 		account: {type:"axis-config"},
 		address: {value:""},
@@ -39,7 +39,7 @@ RED.nodes.registerType('axis-device',{
 		cgi: { value:""},
 		data: {value:""}
 	},
-	icon: "camera-icon2.png",
+	icon: "font-awesome/fa-cog",
 	inputs:1,
 	outputs:1,
 	label: function() {
@@ -48,7 +48,6 @@ RED.nodes.registerType('axis-device',{
 	oneditprepare: function() {
 		$("#node-input-action").change(function() {
 			var action = $("#node-input-action").val();
-			console.log("oneditprepare");
 			$(".cgi_request").hide();
 			switch (action) {
 				case "Device Info":

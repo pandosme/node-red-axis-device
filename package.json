@@ -26,7 +26,8 @@
   "node-red": {
     "nodes": {
       "axis-config": "axis-config.js",
-      "axis-device": "axis-device.js"
+      "axis-device": "axis-device.js",
+      "axis-acap":"axis-acap.js"
     }
   },
   "repository": {
