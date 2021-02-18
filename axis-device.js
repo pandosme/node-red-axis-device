@@ -10,10 +10,17 @@ module.exports = function(RED) {
 		this.action = config.action;
 		this.cgi = config.cgi;
 		this.data = config.data;
+		this.filename = config.filename;
 		var node = this;
 		node.on('input', function(msg) {
 			var account = RED.nodes.getNode(node.account);
 			var address = msg.address || node.address;
+			var action = msg.action || node.action;
+			var payload = node.data || msg.payload;
+			var filename = msg.filename || node.filename;
+			
+			node.status({});
+			
 			var device = {
 				url: account.protocol + '://' + address,
 				user: msg.user || account.name,
@@ -40,8 +47,6 @@ module.exports = function(RED) {
 				node.send(msg);
 				return;
 			}
-			var action = msg.action || node.action;
-			var payload = node.data || msg.payload;
 			msg.error = false;
 			switch( action ) {
 				case "Device Info":
@@ -91,15 +96,16 @@ module.exports = function(RED) {
 
 				case "Upgrade firmware":
 					node.status({fill:"blue",shape:"dot",text:"Updating firmware..."});
-					//Payload can be string with full filenem path or a buffer to the file
-					vapix.updateFirmware( camera , payload, function(error, response ) {
+					var data = filename || msg.payload;
+					vapix.UpdateFirmware( device , data, function(error, response ) {
 						msg.payload = response;
 						msg.error = error;
 						if(msg.error) {
 							node.warn("Device upgrade failed");
-							node.status({fill:"red",shape:"dot",text:"Failed"});
+							node.status({fill:"red",shape:"dot",text:"Device upgrade failed"});
 						} else {
-							node.status({fill:"green",shape:"dot",text:"Failed"});
+							node.status({fill:"green",shape:"dot",text:"Device upgraded"});
+							msg.payload = "Device upgraded";
 						}
 						node.send(msg);
 					});
@@ -161,9 +167,10 @@ module.exports = function(RED) {
             name: {type:"text"},
 			account: {type:"axis-config"},
 			address: {type:"text"},
+			action: { type:"text" },
 			data: {type: "text"},
 			cgi: {type: "text"},
-			action: { type:"text" }
+			filename: { type:"text" }
 		}		
 	});
 }

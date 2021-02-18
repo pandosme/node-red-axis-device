@@ -6,8 +6,6 @@ const FormData = require("form-data");
 var exports = module.exports = {};
 
 exports.get = function( device, path, resonseType, callback ) {
-//	console.log("AxisDigest.get", device, path );
-
 	var client = got.extend({
 		hooks:{
 			afterResponse: [
@@ -15,7 +13,7 @@ exports.get = function( device, path, resonseType, callback ) {
 					const options = res.request.options;
 					const digestHeader = res.headers["www-authenticate"];
 					if (!digestHeader){
-						console.error("Camera Get: Response contains no digest header");
+						console.error("Response contains no digest header");
 						return res;
 					}
 					const incomingDigest = digestAuth.ClientDigestAuth.analyze(	digestHeader );
@@ -40,7 +38,6 @@ exports.get = function( device, path, resonseType, callback ) {
 			callback(false, response.body );
 		} catch (error) {
 			console.log("HTTP GET Error:", error);
-//			console.log(response);
 			callback(error, error );
 		}
 	})();
@@ -76,15 +73,6 @@ exports.post = function( device, path, body, callback ) {
 		json = body;
 	if( typeof body === "string" )
 		json = json = JSON.parse( body );
-
-/*
-	console.log("AxisDigest.Post", {
-		device:device,
-		path: path,
-		json: json,
-		body: body
-	});
-*/
 
 	(async () => {
 		try {
@@ -122,21 +110,15 @@ exports.upload = function( device, type, filename, buffer, callback ) {
 		return;
 	}
 
-	if( !user || typeof user !== "string" || user.length === 0 ) {
+	if( !device.user || typeof device.user !== "string" || device.user.length === 0 ) {
 		callback(true,"Invalid user name");
 		return;
 	}
 
-	if( !password || typeof password !== "string" || password.length === 0 ) {
+	if( !device.password || typeof device.password !== "string" || device.password.length === 0 ) {
 		callback(true,"Invalid password");
 		return;
 	}
-
-	if( !url || typeof url !== "string" || url.length === 0 ) {
-		callback(true,"Invalid upload url");
-		return;
-	}
-	
 
 	var formData = {
 		apiVersion: "1.0",
@@ -150,7 +132,7 @@ exports.upload = function( device, type, filename, buffer, callback ) {
 		
 	switch( type ) {
 		case "firmware":
-			url =  device.url + '/axis-cgi/uploadoverlayimage.cgi';
+			url =  device.url + '/axis-cgi/firmwaremanagement.cgi';
 			part1 = "data";
 			part2 = "fileData";
 			formData.method = "upgrade";
@@ -176,7 +158,7 @@ exports.upload = function( device, type, filename, buffer, callback ) {
 	}
 
 	var formJSON = JSON.stringify(formData);
-
+	
 	var client = got.extend({
 		hooks:{
 			afterResponse: [
@@ -184,11 +166,11 @@ exports.upload = function( device, type, filename, buffer, callback ) {
 					const options = res.request.options;
 					const digestHeader = res.headers["www-authenticate"];
 					if (!digestHeader){
-						console.error("Firmware update: Response contains no digest header");
+						console.error("Response contains no digest header");
 						return res;
 					}
 					const incomingDigest = digestAuth.ClientDigestAuth.analyze(	digestHeader );
-					const digest = digestAuth.ClientDigestAuth.generateProtectionAuth( incomingDigest, camera.user, camera.password,{
+					const digest = digestAuth.ClientDigestAuth.generateProtectionAuth( incomingDigest, device.user, device.password,{
 						method: options.method,
 						uri: options.url.pathname,
 						counter: 1
@@ -223,13 +205,15 @@ exports.upload = function( device, type, filename, buffer, callback ) {
 	(async () => {
 		try {
 			const response = await client.post(url);
-			console.log(response.body);
+			json = JSON.parse( response.body );
+			if( json && json.hasOwnProperty("error") ) {
+				callback("Upload failed", json.error );
+				return;
+			}
 			callback(false, response.body );
 		} catch (error) {
-			console.log(error);
 			callback(error, error);
 		}
 	})();
-
 }
 

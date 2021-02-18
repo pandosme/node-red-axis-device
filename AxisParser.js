@@ -1,5 +1,5 @@
-
 var exports = module.exports = {};
+const xml2js = require('xml2js');
 
 exports.param2json = function( data ) {
 //	console.log("AxisParser.param2json", data );
@@ -35,5 +35,36 @@ exports.param2json = function( data ) {
 		}
 	});
 	return result;
-
 }
+
+exports.AcapList2JSON = function( xml, callback ) {
+	var parser = new xml2js.Parser({
+		explicitArray: false,
+		mergeAttrs: true
+	});
+		
+	parser.parseString(xml, function (err, result) {
+		if( err ) {
+			callback( true, "XML parse error");
+			return;
+		}
+		var json = result;
+		if( !json.hasOwnProperty("reply")) {
+			callback( true, "json parse error");
+			return;
+		}
+		json = json.reply;
+		if( !json.hasOwnProperty("result") || json.result !== "ok" || !json.hasOwnProperty("application")) {
+			callback( false, []);
+			return;
+		}
+		if( !Array.isArray(json.application) ) {
+			var list = [];
+			list.push(json.application);
+			callback(false,list);
+			return;
+		}
+		callback(false,json.application);
+	});
+}
+

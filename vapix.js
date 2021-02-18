@@ -197,9 +197,9 @@ exports.DeviceInfo = function( device, callback ) {
 }
 
 
-// payload may be a filepath or a file buffer
 exports.UpdateFirmware = function( device , payload, callback ) {
-	var fileBuffer = payload;
+	// payload may be a filepath or a file buffer
+	console.log("Update firmware: " + payload );
 	
 	if( Buffer.isBuffer(payload)  ) {
 		AxisDigest.upload( device, "firmware", "firmware.bin", payload, function( error, response) {
@@ -232,3 +232,96 @@ exports.Reboot = function( device, callback ) {
 	});
 }
 
+exports.ACAP_List = function( device, callback ) {
+	AxisDigest.get( device, '/axis-cgi/applications/list.cgi', "text", function(error, response) {
+		if( error ) {
+			callback( true, response );
+			return;
+		}
+		if( response.search("Error") >= 0 ) {
+			callback( true, response );
+			return;
+		}
+		AxisParser.AcapList2JSON(response, function(error, data) {
+			callback( true, data );
+		});
+	});
+}
+
+exports.ACAP_Control = function( device, action, acapID, callback ) {
+	//Actions:  "start", "stop", "remove"
+	if( !action || action.length == 0 ) {
+		callback( true, "Invalid ACAP control action");
+		return;
+	}
+	
+	if( !acapID || acapID.length == 0 || acapID.length > 20 ) {
+		callback( true, "Invalid ACAP ID");
+		return;
+	}
+	
+	var path =  '/axis-cgi/applications/control.cgi?action=' + action + '&package=' + acapID;
+	AxisDigest.get( device, path, "text", function(error, response) {
+		if( error ) {
+			callback( true, response );
+			return;
+		}
+		response = response.trim();
+		switch( response ) {
+			case "OK":
+			case "Error: 6":  //Application is already running
+			case "Error: 7":  //Application is not running
+				callback( false, "OK");
+			break;
+			case "Error: 4":
+				callback( true, "Invalid ACAP");
+			break;
+			default:
+				callback( true, response );
+			break;
+		}
+	});
+}
+
+exports.ACAP_Install = function( device , payload, callback ) {
+	// payload may be a filepath or a file buffer
+	
+	//If file buffer
+	if( Buffer.isBuffer(payload)  ) {
+		AxisDigest.upload( device, "acap", "acap.eap", payload, function( error, response) {
+			callback( error, response );
+		});
+		return;
+	}
+
+	//If file path
+	
+	if( typeof payload !== "string" ) {
+		callback("Invalid input","Invalid filepath or buffer");
+		return;
+	}
+	if( !fs.existsSync(payload) ) {
+		callback("Invalid input", payload + " does not exist");
+		return;
+	}	
+
+	AxisDigest.upload( device, "acap", "acap.eap", fs.createReadStream(payload), function( error, response) {
+		callback( error, response );
+	});
+}
+
+
+exports.Account_Remove = function( device, accountName, callback ) {
+	var path  = "/axis-cgi/pwdgrp.cgi?action=remove&user=" + accountName;
+	exports.get( device, path, function( error, response ) {
+		if( error ) {
+			callback(true, response );
+			return;
+		}
+		if( response.search("Error") >= 0 ) {
+			callback( true, "Unable to remove account");
+			return;
+		}
+		callback(false,"OK");
+	});
+}
