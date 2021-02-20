@@ -1,7 +1,6 @@
 module.exports = function(RED) {
 	function Axis_Config_Node(config) {
 		RED.nodes.createNode(this,config);
-//		console.log("Axis_Device_Account",config);
 		this.name = config.name;
 		this.protocol = config.protocol;
 	}

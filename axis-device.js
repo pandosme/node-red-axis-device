@@ -4,7 +4,6 @@ module.exports = function(RED) {
 	
     function Axis_Device(config) {
 		RED.nodes.createNode(this,config);
-//		console.log("Axis_Device: Config:",config);	
 		this.account = config.account;
 		this.address = config.address;
 		this.action = config.action;
@@ -97,7 +96,7 @@ module.exports = function(RED) {
 				case "Upgrade firmware":
 					node.status({fill:"blue",shape:"dot",text:"Updating firmware..."});
 					var data = filename || msg.payload;
-					vapix.UpdateFirmware( device , data, function(error, response ) {
+					vapix.Upload_Firmare( device , data, function(error, response ) {
 						msg.payload = response;
 						msg.error = error;
 						if(msg.error) {

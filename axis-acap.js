@@ -110,7 +110,7 @@ module.exports = function(RED) {
 				case "Install ACAP":
 					var data = filename || msg.payload;
 					node.status({fill:"blue",shape:"dot",text:"Installing ACAP..."});
-					vapix.ACAP_Install( device, data, function(error, response){
+					vapix.Upload_ACAP( device, data, function(error, response){
 						msg.error = error;
 						msg.payload = response;
 						if( error ) {

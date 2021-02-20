@@ -37,7 +37,6 @@ exports.get = function( device, path, resonseType, callback ) {
 			});
 			callback(false, response.body );
 		} catch (error) {
-			console.log("HTTP GET Error:", error);
 			callback(error, error );
 		}
 	})();
@@ -88,17 +87,14 @@ exports.post = function( device, path, body, callback ) {
 					body: body,
 					https: {rejectUnauthorized: false}
 				});
-//			console.log("AxisDigest Response", response.body);
 			callback(false, response.body );
 		} catch (error) {
-			console.log("Axis Digest Post" ,error, response.body);
 			callback(error, error  );
 		}
 	})();
 }
 
-exports.upload = function( device, type, filename, buffer, callback ) {
-	console.log("AxisDigest.upload", type, filename );
+exports.upload = function( device, type, filename, options, buffer, callback ) {
 
 	if(!buffer) {
 		callback(true,"Invalid upload buffer");
@@ -119,6 +115,15 @@ exports.upload = function( device, type, filename, buffer, callback ) {
 		callback(true,"Invalid password");
 		return;
 	}
+
+	var formData = {
+		apiVersion: "1.0",
+		method: "uploadOverlayImage",
+		params:{
+			scaleToResolution:true
+		}
+	};
+
 
 	var formData = {
 		apiVersion: "1.0",
@@ -150,6 +155,13 @@ exports.upload = function( device, type, filename, buffer, callback ) {
 			part1 = "json";
 			part2 = "image";
 			formData.method = "uploadOverlayImage";
+			formData.params = {
+				scaleToResolution:true
+			}
+			if( options && options.hasOwnProperty("scale") && options.scale )
+				formData.params.scaleToResolution = options.scale;
+			if( options && options.hasOwnProperty("alpha")  )
+				formData.params.alpha = options.alpha;			
 			contenttype = "image/" + filename.split(".")[1];
 		break;
 		default:

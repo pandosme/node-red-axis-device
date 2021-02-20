@@ -14,6 +14,7 @@
             <option value="Camera Info">Camera Info</option>
             <option value="Get Image settings">Get image settings</option>
             <option value="Set Image settings">Set image settings</option>
+            <option value="Upload overlay">Upload overlay</option>
 		</select>
 	</div>
 
@@ -34,6 +35,16 @@
 		</select>
 	</div>
 
+    <div class="form-row input_filename">
+        <label for="node-input-filename"><i class="icon-tag"></i> Filename</label>
+        <input type="text" id="node-input-filename" placeholder="">
+    </div>
+
+    <div class="form-row input_options">
+        <label for="node-input-options"><i class="icon-tag"></i> Options</label>
+        <input type="text" id="node-input-options" placeholder="">
+    </div>
+
     <div class="form-row action_capture">
         <label for="node-input-output"><i class="icon-tag"></i> Output</label>
         <select id="node-input-output">
@@ -53,7 +64,9 @@ RED.nodes.registerType('axis-camera',{
 		address: {value:""},
 		action: { value:"JPEG Image"},
 		resolution: { value:"640x360"},
-		output: { value:"Base64"}
+		output: { value:"Base64"},
+		filename: { value:""},
+		options: { value:""}		
 	},
 	icon: "font-awesome/fa-video-camera",
 	inputs:1,
@@ -65,12 +78,38 @@ RED.nodes.registerType('axis-camera',{
 		$("#node-input-action").change(function() {
 			var action = $("#node-input-action").val();
 			$(".action_capture").show();
+			$(".input_options").hide();
+			$(".input_filename").hide();
 			switch (action) {
 				case "JPEG Image":
 					$(".action_capture").show();
+					$(".input_options").hide();
+					$(".input_filename").hide();
+				break;
+				case "Camera Info":
+					$(".action_capture").hide();
+					$(".input_options").hide();
+					$(".input_filename").hide();
+				break;
+				case "Get Image settings":
+					$(".action_capture").show();
+					$(".input_options").hide();
+					$(".input_filename").hide();
+				break;
+				case "Set Image settings":
+					$(".action_capture").show();
+					$(".input_options").show();
+					$(".input_filename").hide();
+				break;
+				case "Upload overlay":
+					$(".action_capture").hide();
+					$(".input_filename").show();
+					$(".input_options").show();
 				break;
 				default:
 					$(".action_capture").hide();
+					$(".input_options").hide();
+					$(".input_filename").hide();
 			}
 		});
 	}
@@ -78,4 +117,61 @@ RED.nodes.registerType('axis-camera',{
 </script>
 
 <script type="text/x-red" data-help-name="axis-camera">
+	<h3>Inputs:</h3>
+	<dl class="message-properties">
+		<dt>credentials<span class="property-type">configuration</span></dt>
+		<dd>Camera credentials user and password is required.<br/>
+		Use <code>msg.user</code> and <code>msg.password</code> to override config</dd>
+	</dl>	
+	
+	<dl class="message-properties">
+		<dt>address<span class="property-type">string</span></dt>
+		<dd>IP address or FQDN.<br/>
+		Use <code>msg.address</code> to override config</dd>
+	</dl>	
+
+	<dl class="message-properties">
+		<dt>Action<span class="property-type">string</span></dt>
+		<dd>Use <code>msg.action</code> to override config</dd>
+	</dl>	
+
+	<dl class="message-properties">
+		<dt>Reolution<span class="property-type">string </span></dt>
+		<dd>Note that not all cameras supports all resolutions in list.<br/>
+		Use <code>msg.resolution</code>="640x480" to override config.  Additional profile properties can be added "&prop=value" (see VAPIX documentation).
+		</dd>
+	</dl>	
+
+	<dl class="message-properties">
+		<dt>Output<span class="property-type">string</span></dt>
+		<dd>JPEG can be delivered as a buffer or base64 encoded depending on the needs for the consuming node.<br/>
+		</dd>
+	</dl>	
+
+	<dl class="message-properties">
+		<dt>Filname<span class="property-type">string</span></dt>
+		<dd>The complete filepath of a JPEG, PNG och BMP file<br/>
+		Filename can be injected with <code>msg.filname</code>.<br/>
+		</dd>
+	</dl>	
+
+	<dl class="message-properties">
+		<dt>Options<span class="property-type">string | object</span></dt>
+		<dd>Additional options (or use <code>msg.payload</code>). <br/>
+		Image overlay (optional): <code>{"scaleToResolution":true,"alpha": "ffffff"}</code><br/>
+		</dd>
+	</dl>	
+
+	<h3>Outputs:</h3>
+	<dl class="message-properties">
+		<dt>msg.error<span class="property-type">bool | string</span></dt>
+		<dd>On success, error will be <code>false</code><br/>
+		On failure, error will be <code>true</code> or message string</dd>
+	</dl>	
+
+	<dl class="message-properties">
+		<dt>msg.payload<span class="property-type">bool | string | buffer</span></dt>
+		<dd>Depends on action</dd>
+	</dl>	
+
 </script>

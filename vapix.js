@@ -5,7 +5,6 @@ const AxisParser = require("./AxisParser.js");
 var exports = module.exports = {};
 
 exports.JPEG = function( device, profile, callback ) {
-	console.log("Imge capture: " + profile);
 	AxisDigest.get( device, '/axis-cgi/jpg/image.cgi?' + profile, "buffer", function( error, body ) {
 		callback( error, body );
 	});
@@ -43,7 +42,6 @@ exports.GetParam = function( device, paramPath, callback ) {
 }
 
 exports.SetParam = function( device, group, parameters, callback ) {
-//	console.log("SetParam",device,group,parameters);
 	if( !group || group.length == 0 ) {
 		callback( true, "Undefined property group");
 		return;
@@ -81,7 +79,6 @@ exports.SetParam = function( device, group, parameters, callback ) {
 }
 
 exports.DeviceInfo = function( device, callback ) {
-//	console.log("DeviceInfo",device);
 	var info = {
 		type: "Undefined",
 		model: "Undefined",
@@ -131,7 +128,6 @@ exports.DeviceInfo = function( device, callback ) {
 						callback( error,"Unable to read properties" );
 						return;
 					}
-//					console.log(response);
 					if( response.hasOwnProperty("Firmware") && response.Firmware.hasOwnProperty("Version"))
 						info.firmware = response.Firmware.Version;
 					if( response.hasOwnProperty("Image") && response.Image.hasOwnProperty("Format")) {
@@ -196,32 +192,6 @@ exports.DeviceInfo = function( device, callback ) {
 	});
 }
 
-
-exports.UpdateFirmware = function( device , payload, callback ) {
-	// payload may be a filepath or a file buffer
-	console.log("Update firmware: " + payload );
-	
-	if( Buffer.isBuffer(payload)  ) {
-		AxisDigest.upload( device, "firmware", "firmware.bin", payload, function( error, response) {
-			callback( error, response );
-		});
-		return;
-	}
-	
-	if( typeof payload !== "string" ) {
-		callback("Invalid input","Firmware upload requires a filepath or buffer");
-		return;
-	}
-	if( !fs.existsSync(payload) ) {
-		callback("Invalid input","File "+ payload + " does not exist");
-		return;
-	}	
-
-	AxisDigest.upload( device, "firmware", "firmware.bin", fs.createReadStream(payload), function( error, response) {
-		callback( error, response );
-	});
-}
-
 exports.Reboot = function( device, callback ) {
 	AxisDigest.get( device, '/axis-cgi/restart.cgi', "text", function(error, response) {
 		if( error ) {
@@ -283,34 +253,6 @@ exports.ACAP_Control = function( device, action, acapID, callback ) {
 	});
 }
 
-exports.ACAP_Install = function( device , payload, callback ) {
-	// payload may be a filepath or a file buffer
-	
-	//If file buffer
-	if( Buffer.isBuffer(payload)  ) {
-		AxisDigest.upload( device, "acap", "acap.eap", payload, function( error, response) {
-			callback( error, response );
-		});
-		return;
-	}
-
-	//If file path
-	
-	if( typeof payload !== "string" ) {
-		callback("Invalid input","Invalid filepath or buffer");
-		return;
-	}
-	if( !fs.existsSync(payload) ) {
-		callback("Invalid input", payload + " does not exist");
-		return;
-	}	
-
-	AxisDigest.upload( device, "acap", "acap.eap", fs.createReadStream(payload), function( error, response) {
-		callback( error, response );
-	});
-}
-
-
 exports.Account_Remove = function( device, accountName, callback ) {
 	var path  = "/axis-cgi/pwdgrp.cgi?action=remove&user=" + accountName;
 	exports.get( device, path, function( error, response ) {
@@ -325,3 +267,167 @@ exports.Account_Remove = function( device, accountName, callback ) {
 		callback(false,"OK");
 	});
 }
+
+exports.Upload_Firmare = function( device , options, callback ) {
+	
+	if( Buffer.isBuffer(options)  ) {
+		AxisDigest.upload( device, "firmware", "firmware.bin", options, function( error, response) {
+			callback( error, response );
+		});
+		return;
+	}
+	
+	if( typeof options !== "string" ) {
+		callback("Invalid input","Firmware upload requires a filepath or buffer");
+		return;
+	}
+	if( !fs.existsSync(options) ) {
+		callback("Invalid input","File "+ options + " does not exist");
+		return;
+	}	
+
+	AxisDigest.upload( device, "firmware", "firmware.bin", null, fs.createReadStream(options), function( error, response) {
+		callback( error, response );
+	});
+}
+
+exports.Upload_Overlay = function( device, filename, options, callback ) {
+	if(!filename || typeof filename !== "string" ) {
+		callback(true,"Invalid filename");
+		return;
+	}
+
+	if( !fs.existsSync(filename) ) {
+		callback("Invalid input", filename + " does not exist");
+		return;
+	}	
+	
+	var paths = filename.split("/");
+	var file = paths[paths.length-1];
+
+	AxisDigest.upload( device, "overlay", file, options, fs.createReadStream(filename), function( error, response) {
+		callback( error, response );
+	});
+}
+
+exports.Upload_ACAP = function( device , options, callback ) {
+	// options may be a filepath or a file buffer
+	
+	//If file buffer
+	if( Buffer.isBuffer(options)  ) {
+		AxisDigest.upload( device, "acap", "acap.eap", null, options, function( error, response) {
+			callback( error, response );
+		});
+		return;
+	}
+
+	//If file path
+	
+	if( typeof options !== "string" ) {
+		callback("Invalid input","Invalid filepath or buffer");
+		return;
+	}
+	if( !fs.existsSync(options) ) {
+		callback("Invalid input", options + " does not exist");
+		return;
+	}	
+
+	AxisDigest.upload( device, "acap", "acap.eap", null, fs.createReadStream(options), function( error, response) {
+		callback( error, response );
+	});
+}
+
+exports.Accounts = function( device, action, options, callback) {
+	switch( action ) {
+		case "list":
+			AxisDigest.get( device, '/axis-cgi/pwdgrp.cgi?action=get', "text", function( error, response ) {
+				if( error ) {
+					callback( true, error );
+					return;
+				}
+				if( response.search("Error") >= 0 ) {
+					callback( "Request failed", response);
+					return;
+				}
+				AxisParser.Accounts2JSON( response, function( error, json ) {
+					callback(error,json);
+				});
+			});
+		break;
+		case "set":
+			if( !options ) {
+				callback("Invalid input","No account data");
+				return;
+			}
+			if( typeof options !== "string" && typeof options !== "object" ) {
+				callback("Invalid input","No account data");
+				return;
+			}
+			account = options;
+			if( typeof account === "string" )
+				account = JSON.parse(account);
+			
+			if( !account || !account.hasOwnProperty("name") || !account.hasOwnProperty("privileges") || !account.hasOwnProperty("password") ) {
+				callback("Invalid input", "Missing account name, password or priviliges");
+				return;
+			}
+		
+			var cgi = '/axis-cgi/pwdgrp.cgi?action=update&user=' + account.name + '&pwd=' + encodeURIComponent(account.password);
+			AxisDigest.get( device, cgi, "text", function( error, response ) {
+				if( error ) {
+					callback(error, response);
+					return;
+				}
+				if( response.search("Error") >= 0 ) {
+					var sgrp = "viewer";
+					if( account.privileges.toLowerCase() === "viewer" || account.privileges.toLowerCase() === "player" )
+						sgrp = "viewer";
+					if( account.privileges.toLowerCase() === "operator" || account.privileges.toLowerCase() === "client" )
+						sgrp = "viewer:operator:ptz";
+					if( account.privileges.toLowerCase() === "admin" || account.privileges.toLowerCase() === "administrator" )
+						sgrp = "viewer:operator:admin:ptz";
+					if( account.privileges.toLowerCase() === "api" )
+						sgrp = "operator:admin";
+					cgi = '/axis-cgi/pwdgrp.cgi?action=add&user=' + account.name + '&pwd=' + encodeURIComponent(account.password) + '&grp=users&sgrp=' + sgrp + '&comment=node';
+					AxisDigest.get( device, cgi, "text", function( error, response ) {	
+						if( error ) {
+							callback( true, response );
+							return;
+						}
+						if( response.search("Error") >= 0 ) {
+							callback( "Request failed", response );
+							return;
+						}
+						callback( false, "OK" );
+						return;
+					});
+					return;
+				}
+				callback( false, "OK" );
+			});
+		break;
+		
+		case "remove":
+			if( !options || typeof options !== "string" ) {
+				callback("Invalid input","Invalid account name");
+				return;
+			}
+			var cgi  = "/axis-cgi/pwdgrp.cgi?action=remove&user=" + options;
+			AxisDigest.get( device, path, "text", function( error, response ) {
+				if( error ) {
+					callback(error, response );
+					return;
+				}
+				if( response.search("Error") >= 0 ) {
+					callback( "Request failed", response);
+					return;
+				}
+				callback(false,"OK");
+			});
+		break;
+		
+		default:
+			callback("Invalid action",action + " is undfined");
+		break;
+	}
+};

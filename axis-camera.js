@@ -9,10 +9,17 @@ module.exports = function(RED) {
 		this.action = config.action;
 		this.resolution = config.resolution;
 		this.output = config.output;
+		this.options = config.options;
+		this.filename = config.filename;
+		
 		var node = this;
 		node.on('input', function(msg) {
 			var account = RED.nodes.getNode(node.account);
 			var address = msg.address || node.address;
+			var action = msg.action || node.action;
+			var filename = msg.filename || node.filename;
+			var options = node.options || msg.payload;
+			
 			var device = {
 				url: account.protocol + '://' + address,
 				user: msg.user || account.name,
@@ -39,7 +46,6 @@ module.exports = function(RED) {
 				node.send(msg);
 				return;
 			}
-			var action = msg.action || node.action;
 			msg.error = false;
 			
 			switch( action ) {
@@ -47,20 +53,12 @@ module.exports = function(RED) {
 					var resolution = "resolution=" + node.resolution;
 					if( msg.resolution )
 						resolution = "resolution=" + msg.resolution;
-					console.log("JPEG Image", {
-						noderes: node.resolution,
-						msgres: msg.resolution,
-						output: node.output,
-						profile: resolution
-					});
 					vapix.JPEG( device, resolution, function( error, response) {
 						msg.payload = response;
 						msg.error = error;
 						if( msg.error ) {
-							msg.payload = "Image capture failed";
 							node.warn(error);
 						} else {
-							console.log( typeof resonse );
 							if( node.output === "Base64" )
 								msg.payload = response.toString('base64');
 						}
@@ -101,7 +99,7 @@ module.exports = function(RED) {
 				break;
 
 				case "Set Image settings":
-					vapix.SetParam( device, "ImageSource.I0.Sensor", msg.payload, function( error, response ) {
+					vapix.SetParam( device, "ImageSource.I0.Sensor", options, function( error, response ) {
 						msg.error = error;
 						msg.payload = response;
 						if(msg.error)
@@ -109,10 +107,37 @@ module.exports = function(RED) {
 						node.send(msg);
 					});
 				break;
+
+				case "Upload overlay":
+					if(!filename || filename.length === 0 ) {
+						node.status({fill:"red",shape:"dot",text:"Invalid filename"});
+						msg.error = true;
+						msg.payload = "Invalid filename";
+						node.send(msg)
+					}
+					
+					node.status({fill:"blue",shape:"dot",text:"Uploading image..."});
+					if( typeof options === "number" || typeof options === "boolean" || typeof options === "undefined" )
+						options = null;
+					if( typeof options === "string" )
+						options = JSON.parse( options );
+					vapix.Upload_Overlay( device, filename, options, function(error, response){
+						msg.error = error;
+						msg.payload = response;
+						if( error ) {
+							node.status({fill:"red",shape:"dot",text:"Upload failed"});
+						} else {
+							node.status({fill:"green",shape:"dot",text:"Upload success"});
+							msg.payload = "Upload complete";
+						}
+						node.send(msg);
+					});
+				break;
 				
 				default:
 					node.warn( action + "is not yet implemented");
 				break;
+
 			}
         });
     }
@@ -124,7 +149,9 @@ module.exports = function(RED) {
 			address: {type:"text"},
 			action: { type:"text" },
 			resolution: { type:"text" },
-			output: { type:"text" }
+			output: { type:"text" },
+			options: { type:"text" },
+			filename: { type:"text" }
 		}		
 	});
 }

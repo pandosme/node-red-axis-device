@@ -2,8 +2,6 @@ var exports = module.exports = {};
 const xml2js = require('xml2js');
 
 exports.param2json = function( data ) {
-//	console.log("AxisParser.param2json", data );
-
 	var rows = data.split('\n');
 	var result = {};
 	rows.forEach(function(row){
@@ -68,3 +66,54 @@ exports.AcapList2JSON = function( xml, callback ) {
 	});
 }
 
+exports.Accounts2JSON = function( data, callback ) {
+	var accounts = [];
+	var admins = [];
+	var operators = [];
+	var viewers = [];
+	var rows = data.split('\n');
+	rows.forEach(function(line){
+		line = line.trim();
+		items = line.split('=');
+		if( items.length === 2 ) {
+			account = items[0];
+			users = items[1].replace(/[&\/\\#+()$~%.'":*?<>{}]/g, '');
+			users = users.split(',');
+			if( account === 'users')
+				accounts = users;
+			if( account === 'admin')
+				admins = users;
+			if( account === 'viewer')
+				viewers = users;
+			if( account === 'operator')
+				operators = users;
+		}
+	})
+	
+	list = [
+		{
+			name: "root",
+			priviliges: "System"
+		}
+	];
+	accounts.forEach(function(account){
+		var privileges = "Undefined";
+		viewers.forEach(function(name){
+			if( account === name )
+				privileges = "Viewer"
+		})
+		operators.forEach(function(name){
+			if( account === name )
+				privileges = "Operator"
+		})
+		admins.forEach(function(name){
+			if( account === name )
+				privileges = "Admin"
+		})
+		list.push({
+			name: account,
+			privileges: privileges
+		})    
+	})
+	callback( false, list );
+}
