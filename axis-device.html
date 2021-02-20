@@ -13,7 +13,12 @@
             <option value="Device Info">Device Info</option>
             <option value="HTTP Get">HTTP Get</option>
             <option value="HTTP Post">HTTP Post</option>
-            <option value="Reboot">Reboot</option>
+            <option value="Syslog">Syslog</option>
+            <option value="Get time">Get time</option>
+            <option value="Connections">Connections</option>
+            <option value="Get location">Get location</option>
+            <option value="Set location">Set location</option>
+            <option value="Restart">Restart</option>
             <option value="Upgrade firmware">Upgrade firmware</option>
 		</select>
 	</div>
@@ -84,6 +89,16 @@ RED.nodes.registerType('axis-device',{
 				case "HTTP Post":
 					$(".cgi_get").show();
 					$(".cgi_post").show();
+					$(".firmware_install").hide();
+				break;
+				case "Set location":
+					$(".cgi_get").hide();
+					$(".cgi_post").show();
+					$(".firmware_install").hide();
+				break;
+				default:
+					$(".cgi_get").hide();
+					$(".cgi_post").hide();
 					$(".firmware_install").hide();
 				break;
 			}

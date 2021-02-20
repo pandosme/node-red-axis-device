@@ -57,6 +57,7 @@ module.exports = function(RED) {
 						node.send(msg);
 					});
 				break;
+
 				case "Network settings":
 					var body = {
 						"apiVersion": "1.0",
@@ -82,12 +83,12 @@ module.exports = function(RED) {
 					});
 				break;
 				
-				case "Reboot":
+				case "Restart":
 					vapix.Reboot( device, function( error, response) {
 						msg.payload = response;
 						msg.error = error;
 						if( msg.error ) {
-							node.warn("Device reboot failed");
+							node.warn("Device restart failed");
 						}
 						node.send(msg);
 					});
@@ -120,14 +121,17 @@ module.exports = function(RED) {
 					vapix.Get( device, cgi, "text", function(error, response ) {
 						msg.error = error;
 						msg.payload = response;
-						if( typeof msg.payload === "string" ) {
-							var json = JSON.parse(response);
-							if( json )
-								msg.payload = json;
+						if( typeof msg.payload === "string") {
+							if( msg.payload[0] === '{' || msg.payload[0] === '[' ) {
+								var json = JSON.parse(response);
+								if( json )
+									msg.payload = json;
+							}
 						}
 						node.send(msg);
 					});
 				break;
+				
 				case "HTTP Post":
 					var cgi = node.cgi || msg.cgi;
 					if( !cgi || cgi.length < 2 ) {
@@ -152,8 +156,56 @@ module.exports = function(RED) {
 						node.send(msg);
 					});
 				break;
+
+				case "Syslog":
+					vapix.Syslog( device, function( error, response) {
+						msg.payload = response;
+						msg.error = error;
+						node.send(msg);
+					});
+				break;
+
+				case "Get time":
+					vapix.GetTime( device, function( error, response) {
+						msg.payload = response;
+						msg.error = error;
+						node.send(msg);
+					});
+				break;
+
+				case "Connections":
+					vapix.Connections( device, function( error, response) {
+						msg.payload = response;
+						msg.error = error;
+						node.send(msg);
+					});
+				break;
+
+				case "Get location":
+					vapix.GetLocation( device, function( error, response) {
+						msg.payload = response;
+						msg.error = error;
+						node.send(msg);
+					});
+				break;
+
+				case "Set location":
+					if(!payload || typeof payload === "number" || typeof payload === "boolean") {
+						msg.error = "Invalid input";
+						msg.payload = "Invalid location data";
+						node.send(msg);
+						return;
+					}
+					vapix.SetLocation( device, payload, function( error, response) {
+						msg.payload = response;
+						msg.error = error;
+						node.send(msg);
+					});
+				break;
+				
 				default:
-					msg.error = "Invalid action";
+					msg.error = "Action " + action + " is undefined";
+					msg.payload = "Action " + action + " is undefined";
 					node.warn(msg.error);
 					node.send(msg);
 					return;

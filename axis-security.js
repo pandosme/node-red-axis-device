@@ -68,6 +68,22 @@ module.exports = function(RED) {
 						node.send(msg);
 					});
 				break;
+
+				case "List certificates":
+					vapix.Certificates_List( device, function(error, response){
+						msg.error = error;
+						msg.payload = response;
+						node.send(msg);
+					});
+				break;
+				
+				case "Request CSR":
+					vapix.Certificates_CSR( device, options, function(error, response){
+						msg.error = error;
+						msg.payload = response;
+						node.send(msg);
+					});
+				break;
 				
 				default:
 					node.warn( action + "is not yet implemented");

@@ -14,6 +14,8 @@
             <option value="List accounts">List accounts</option>
             <option value="Set account">Set account</option>
             <option value="Remove account">Remove account</option>
+            <option value="List certificates">List certificates</option>
+            <option value="Request CSR">Request CSR</option>
 		</select>
 	</div>
 
@@ -52,6 +54,9 @@ RED.nodes.registerType('axis-security',{
 					$(".input_options").show();
 				break;
 				case "Remove account":
+					$(".input_options").show();
+				break;
+				case "Request CSR":
 					$(".input_options").show();
 				break;
 				default:

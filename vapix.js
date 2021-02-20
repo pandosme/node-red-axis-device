@@ -202,6 +202,129 @@ exports.Reboot = function( device, callback ) {
 	});
 }
 
+exports.Syslog = function( device, callback ) {
+	AxisDigest.get( device, '/axis-cgi/systemlog.cgi', "text", function(error, response) {
+		if( error ) {
+			callback( error, response );
+			return;
+		}
+		var list = AxisParser.Syslog2List( response );
+		callback( false, list );
+	});
+}
+
+exports.GetTime = function( device, callback ) {
+	var body = {
+		"apiVersion": "1.0",
+		"context": "NodeRed",
+		"method": "getDateTimeInfo"
+	};
+	AxisDigest.post( device, "/axis-cgi/time.cgi", body, function(error, response ) {
+		if( !error && response.hasOwnProperty("data") ) {
+			callback( false, response.data );
+			return;
+		}
+		if( !error && response.hasOwnProperty("error") ){
+			callback("Request failed", response.error );
+			return;
+		}
+		callback( error, response );
+	});
+}
+
+exports.Connections = function( device, callback ) {
+	AxisDigest.get( device, '/axis-cgi/admin/connection_list.cgi?action=get', "text", function(error, response) {
+		if( error ) {
+			callback( error, response );
+			return;
+		}
+		var rows = response.split('\n');
+		var list = [];
+		for( var i = 1; i < rows.length; i++) {
+			var row = rows[i].trim();
+			row = row.replace(/\s{2,}/g, ' ');
+			if( row.length > 10 ) {
+				var items = row.split(' ');
+				var ip = items[0].split('.');
+				if( ip != '127' ) {
+					list.push({
+						address: items[0],
+						protocol: items[1],
+						port: items[2],
+						service: items[3].split('/')[1]
+					})
+				}
+			}
+		}
+		callback( false, list );
+	});
+}
+
+exports.GetLocation = function( device, callback ) {
+	AxisDigest.get( device, '/axis-cgi/geolocation/get.cgi', "text", function(error, response) {
+		if( error ) {
+			callback( error, response );
+			return;
+		}
+		AxisParser.Location( response, function(error, response ) {
+			callback( error, response );
+		});
+	});
+}
+
+exports.SetLocation = function( device, data, callback ) {
+	var location = data;
+	if( typeof data === "string")
+		location = JSON.parse(data);
+
+	if( !location || 
+	    !location.hasOwnProperty("longitude") ||
+		!location.hasOwnProperty("latitude") ||
+		!location.hasOwnProperty("direction") ||
+		!location.hasOwnProperty("text") ) {
+		callback("Invalid input","Missing longitude, latitude, direction or text");
+		return;	
+	}
+	var cgi = "/axis-cgi/geolocation/set.cgi?";
+	latSign = "";
+	if( location.latitude < 0 ) {
+		location.latitude = -location.latitude;
+		latSign = "-";
+	}
+	var latInt = parseInt(location.latitude);
+	var latZ = "";
+	if( latInt < 10 )
+		latZ = "0";
+
+	lngSign = "";
+	if( location.longitude < 0 ) {
+		location.longitude = -location.longitude;
+		lngSign = "-";
+	}
+	var lngInt = parseInt(location.longitude);	
+	var lngZ = "00";
+	if( lngInt >= 10 )
+		lngZ = "0";
+	if( lngInt >= 100 )
+		lngZ = "";
+	
+	cgi += "lat=" + latSign + latZ + location.latitude;
+	cgi += "&lng=" + lngSign + lngZ + location.longitude;
+	cgi += "&heading=" + location.direction;
+	cgi += "&text=" + encodeURIComponent(location.text);
+	AxisDigest.get( device, cgi, "text", function(error, response) {
+		if( error ) {
+			callback( error, response );
+			return;
+		}
+		if(  response.search("Success") > 0 ) {
+			callback(false,"OK");
+			return;
+		}
+		callback("Request failed", response);
+	});
+}
+
 exports.ACAP_List = function( device, callback ) {
 	AxisDigest.get( device, '/axis-cgi/applications/list.cgi', "text", function(error, response) {
 		if( error ) {
@@ -431,3 +554,88 @@ exports.Accounts = function( device, action, options, callback) {
 		break;
 	}
 };
+
+
+exports.Certificates_Get = function( device, certificateID, callback ) {
+	var body = '<tds:GetCertificateInformation xmlns="http://www.onvif.org/ver10/device/wsdl">';
+	body += '<CertificateID>' + certificateID + '</CertificateID>';
+	body += '</tds:GetCertificateInformation>';
+	
+	AxisDigest.Soap( device, body, function( error, response ) {
+		if( error ) {
+			callback( error, response);
+			return;
+		}
+		AxisParser.Certificate( response, function( error, cert ) {
+			callback( error,cert);
+		});
+	});
+};
+
+exports.Certificates_List = function( device, callback ){
+	var body = '<tds:GetCertificates xmlns="http://www.onvif.org/ver10/device/wsdl"></tds:GetCertificates>';
+	AxisDigest.Soap( device, body, function( error, response ) {
+		if( error ) {
+			callback(error, response);
+		}
+		AxisParser.Certificates( response, function( error, list ) {
+			if( error ) {
+				callback( error, response );
+				return;
+			}
+			if( list.length === 0 ) {
+				callback( false, list );
+				return;
+			}
+			var certCounter = list.length;
+			var theCallback = callback;
+			var certList = [];
+			for( var i = 0; i < list.length; i++ ) {
+				exports.Certificates_Get( device, list[i].id, function( error, response ) {
+					if( !error )
+						certList.push( response );
+					certCounter--;
+					if( certCounter <= 0 )
+						theCallback( false, certList );
+				});
+			};
+			return;
+		});
+	});
+}
+
+exports.Certificates_CSR = function( device, options, callback){
+	if(!options || typeof csr === "number" || typeof csr === "boolean") {
+		callback("Invalid input","Undefined CSR");
+		return;
+	}
+	csr = options;
+	if( typeof csr === "string" )
+		csr = JSON.parse(csr);
+	if(!csr) {
+		callback("Invalid input","Undefined CSR");
+		return;
+	}
+	csr.id = "CSR_" + new Date().getTime();
+	AxisParser.CSR_Request_Body( csr, function( error, body ) {
+		if( error ) {
+			callback( error, body  + " Check if CSR has unique id" );
+		};
+		AxisDigest.Soap( device, body, function( error, response ) {
+			if( error ) {
+				callback(error,response);
+				return;
+			}
+			AxisParser.SoapParser( response, function( error, data ) {
+				if( !data.hasOwnProperty("acertificates:CreateCertificate2Response") ) {
+					callback("Invalid request", data);
+					return;
+				}
+				callback(error,{
+					id: data["acertificates:CreateCertificate2Response"]["acertificates:Id"],
+					pem: data["acertificates:CreateCertificate2Response"]["acertificates:Certificate"]
+				});
+			});
+		});
+	});
+}
