@@ -620,6 +620,7 @@ exports.Certificates_CSR = function( device, options, callback){
 	AxisParser.CSR_Request_Body( csr, function( error, body ) {
 		if( error ) {
 			callback( error, body  + " Check if CSR has unique id" );
+			return;
 		};
 		AxisDigest.Soap( device, body, function( error, response ) {
 			if( error ) {

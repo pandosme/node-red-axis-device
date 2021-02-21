@@ -68,4 +68,60 @@ RED.nodes.registerType('axis-security',{
 </script>
 
 <script type="text/x-red" data-help-name="axis-security">
+	<h3>Inputs:</h3>
+	<dl class="message-properties">
+		<dt>credentials<span class="property-type">configuration</span></dt>
+		<dd>Camera credentials user and password is required.<br/>
+		Use <code>msg.user</code> and <code>msg.password</code> to override config</dd>
+	</dl>	
+	
+	<dl class="message-properties">
+		<dt>address<span class="property-type">string</span></dt>
+		<dd>IP address or FQDN.<br/>
+		Use <code>msg.address</code> to override config</dd>
+	</dl>	
+
+	<dl class="message-properties">
+		<dt>Action<span class="property-type">string</span></dt>
+		<dd>Use <code>msg.action</code> to override config</dd>
+	</dl>	
+
+	<dl class="message-properties">
+		<dt>Options<span class="property-type">string | object</span></dt>
+		<dd>Depending on acation.  JSON strings will be converted to objects<br/>
+		Use <code>msg.payload</code> to override options config.</dd>
+	</dl>	
+
+	<dl class="message-properties">
+		<dt>Set account<span class="property-type">string | object </span></dt>
+		<dd>Options/msg.payload:<br/><code>{"name":"","password":"","privileges":"Admin | Operator | Viewer"}</code><br/>
+		</dd>
+	</dl>	
+
+	<dl class="message-properties">
+		<dt>Remove account<span class="property-type">string </span></dt>
+		<dd>Options/msg.payload:<br/>
+		<code>Account name</code><br/>
+		</dd>
+	</dl>	
+
+	<dl class="message-properties">
+		<dt>Request CSR<span class="property-type">string | object </span></dt>
+		<dd>Options/msg.payload:<br/>
+		<code>{"CN":"required","C":"optional","O":"Optional","OU":"Optional","ST":"Optional"}</code><br/>
+		</dd>
+	</dl>	
+
+	<h3>Outputs:</h3>
+	<dl class="message-properties">
+		<dt>msg.error<span class="property-type">bool | string</span></dt>
+		<dd>On success, error will be <code>false</code><br/>
+		On failure, error will be <code>true</code> or message string</dd>
+	</dl>	
+
+	<dl class="message-properties">
+		<dt>msg.payload<span class="property-type">bool | string | buffer</span></dt>
+		<dd>Depends on action</dd>
+	</dl>	
+
 </script>
