@@ -1,0 +1,91 @@
+<script type="text/x-red" data-template-name="axis-speaker">
+    <div class="form-row">
+        <label for="node-input-account"><i class="icon-tag"></i> Credentials</label>
+        <input type="text" id="node-input-account">
+    </div>
+    <div class="form-row">
+        <label for="node-input-address"><i class="icon-tag"></i> Address</label>
+        <input type="text" id="node-input-address" placeholder="IP or FQDN">
+    </div>
+    <div class="form-row">
+        <label for="node-input-action"><i class="icon-tag"></i> Action</label>
+        <select id="node-input-action">
+            <option value="Action 1">Action 1</option>
+            <option value="Action 2">Action 2</option>
+		</select>
+	</div>
+
+    <div class="form-row input_options">
+        <label for="node-input-options"><i class="icon-tag"></i> Options</label>
+        <input type="text" id="node-input-options" placeholder="">
+    </div>
+
+    <div class="form-row input_data">
+        <label for="node-input-data"><i class="icon-tag"></i> Data</label>
+        <input type="text" id="node-input-data" placeholder="">
+    </div>
+	
+</script>
+
+<script type="text/javascript">
+RED.nodes.registerType('axis-speaker',{
+	category: 'Axis',
+	color: '#FFCC33',
+	defaults: {
+		account: {type:"axis-config"},
+		address: {value:""},
+		action: { value:"Action 1"},
+		options: { value:""},
+		data: { value:""}
+	},
+	icon: "font-awesome/fa-volume-off",
+	inputs:1,
+	outputs:1,
+	label: function() {
+		return this.action || "axis-speaker";
+	}
+});
+</script>
+
+<script type="text/x-red" data-help-name="axis-speaker">
+	<h3>Inputs:</h3>
+	<dl class="message-properties">
+		<dt>credentials<span class="property-type">configuration</span></dt>
+		<dd>Camera credentials user and password is required.<br/>
+		Use <code>msg.user</code> and <code>msg.password</code> to override config</dd>
+	</dl>	
+	
+	<dl class="message-properties">
+		<dt>address<span class="property-type">string</span></dt>
+		<dd>IP address or FQDN.<br/>
+		Use <code>msg.address</code> to override config</dd>
+	</dl>	
+
+	<dl class="message-properties">
+		<dt>Action<span class="property-type">string</span></dt>
+		<dd>Use <code>msg.action</code> to override config</dd>
+	</dl>	
+
+	<dl class="message-properties">
+		<dt>Options (<code>msg.options</code>) <span class="property-type">string | object</span></dt>
+		<dd>Depends on action</dd>
+	</dl>	
+
+	<dl class="message-properties">
+		<dt>Data (<code>msg.payload</code>) <span class="property-type">string | object</span></dt>
+		<dd>Depends on action</dd>
+	</dl>	
+
+	<h3>Outputs:</h3>
+	<dl class="message-properties">
+		<dt>msg.error<span class="property-type">bool | string</span></dt>
+		<dd>On success, error will be <code>false</code><br/>
+		On failure, error will be <code>true</code> or message string</dd>
+	</dl>	
+
+	<dl class="message-properties">
+		<dt>msg.payload<span class="property-type">bool | string | buffer</span></dt>
+		<dd>Depends on action</dd>
+	</dl>	
+
+</script>

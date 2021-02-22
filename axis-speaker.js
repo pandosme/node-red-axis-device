@@ -1,18 +1,21 @@
 const vapix = require('./vapix.js');
 
 module.exports = function(RED) {
-	function Axis_Security(config) {
+	function Axis_Speaker(config) {
 		RED.nodes.createNode(this,config);
 		this.account = config.account;
 		this.address = config.address;
 		this.action = config.action;
 		this.options = config.options;
-
+		
+		this.data = config.data;
 		var node = this;
 		node.on('input', function(msg) {
+			var action = msg.action || node.action;
 			var account = RED.nodes.getNode(node.account);
 			var address = msg.address || node.address;
-			var options = node.options || msg.payload;
+			var options = msg.options || node.options;
+			var data = node.data || msg.payload;
 			
 			var device = {
 				url: account.protocol + '://' + address,
@@ -40,54 +43,26 @@ module.exports = function(RED) {
 				node.send(msg);
 				return;
 			}
-			var action = msg.action || node.action;
+
 			msg.error = false;
 			
 			switch( action ) {
-				case "List accounts":
-					vapix.Accounts( device, "list", null, function(error, response){
-						msg.error = error;
-						msg.payload = response;
-						node.send(msg);
-					});
-				break;
-
-				case "Set account":
-					//options can be JSON string or object and must include name,password & priviliges
-					vapix.Accounts( device, "set", options, function(error, response){
-						msg.error = error;
-						msg.payload = response;
-						node.send(msg);
-					});
-				break;
-
-				case "Remove account":
-					vapix.Accounts( device, "remove", options, function(error, response){
-						msg.error = error;
-						msg.payload = response;
-						node.send(msg);
-					});
-				break;
-
-				case "List certificates":
-					vapix.Certificates_List( device, function(error, response){
-						msg.error = error;
-						msg.payload = response;
-						node.send(msg);
-					});
-				break;
-				
-				case "Request CSR":
-					if(!options || t) {
-						msg.error = "Invalid input";
-						msg.payload = "Missing CSR data";
-						node.send(msg);
+				case "Action 1":
+					msg.payload = {
+						action: action,
+						data: data,
+						options: options
 					}
-					vapix.Certificates_CSR( device, options, function(error, response){
-						msg.error = error;
-						msg.payload = response;
-						node.send(msg);
-					});
+					node.send(msg);
+				break;
+
+				case "Action 2":
+					msg.payload = {
+						action: action,
+						data: data,
+						options: options
+					}
+					node.send(msg);
 				break;
 				
 				default:
@@ -97,13 +72,14 @@ module.exports = function(RED) {
         });
     }
 	
-    RED.nodes.registerType("axis-security", Axis_Security,{
+    RED.nodes.registerType("axis-speaker", Axis_Speaker,{
 		defaults: {
             name: {type:"text"},
 			account: {type:"axis-config"},
 			address: {type:"text"},
 			action: { type:"text" },
-			options: { type:"text" }
+			options: { type:"text" },
+			data: { type:"text" }
 		}		
 	});
 }

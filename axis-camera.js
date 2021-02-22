@@ -82,29 +82,70 @@ module.exports = function(RED) {
 					vapix.GetParam( device, "ImageSource.I0.Sensor", function( error, response ) {
 						msg.error = error;
 						msg.payload = response;
-						if(msg.error)
+						if(msg.error) {
 							node.warn(error);
-						else {
-							msg.payload = {
-								Brightness: parseInt(response.I0.Sensor.Brightness),
-								ColorLevel: parseInt(response.I0.Sensor.ColorLevel),
-								Contrast: parseInt(response.I0.Sensor.Contrast),
-								Exposure: response.I0.Sensor.Exposure,
-								WhiteBalance: response.I0.Sensor.WhiteBalance,
-								WDR: response.I0.Sensor.WDR
-							}
+							node.send(msg);
+							return;
 						}
-						node.send(msg);
+						var settings = {
+							Brightness: parseInt(response.I0.Sensor.Brightness),
+							ColorLevel: parseInt(response.I0.Sensor.ColorLevel),
+							Contrast: parseInt(response.I0.Sensor.Contrast),
+							Exposure: response.I0.Sensor.Exposure,
+							WhiteBalance: response.I0.Sensor.WhiteBalance,
+							WDR: response.I0.Sensor.WDR
+						}
+						vapix.GetParam( device, "ImageSource.I0.DayNight", function( error, response ) {
+							msg.error = error;
+							msg.payload = response;
+							if(msg.error) {  //Camera does not have DayNight
+								msg.payload = settings;
+								node.send( msg );
+								return;
+							}
+							settings.DayLevel = parseInt(response.I0.DayNight.ShiftLevel);
+							if( response.I0.IrCutFilter === "yes")
+								settings.DayLevel = 100;
+							if( response.I0.IrCutFilter === "no")
+								settings.DayLevel = 0;
+							msg.payload = settings;
+							node.send(msg);
+						});
 					});
 				break;
 
 				case "Set Image settings":
-					vapix.SetParam( device, "ImageSource.I0.Sensor", options, function( error, response ) {
+					if( typeof options === "string" )
+						options = JSON.parse(options);
+					var sensor = JSON.parse( JSON.stringify(options) );
+					delete sensor.DayLevel;
+					vapix.SetParam( device, "ImageSource.I0.Sensor", sensor, function( error, response ) {
 						msg.error = error;
 						msg.payload = response;
-						if(msg.error)
+						if(msg.error) {
 							node.warn(error);
-						node.send(msg);
+							node.send(msg);
+							return;
+						};
+						if( !options.hasOwnProperty("DayLevel") ) {
+							node.send(msg);
+							return;
+						}
+						var DayNight = {
+							IrCutFilter: "auto",
+							ShiftLevel: options.DayLevel
+						}
+						if( options.DayLevel === 0 )
+							DayNight.IrCutFilter = "no";
+						if( options.DayLevel === 100 )
+							DayNight.IrCutFilter = "yes";
+						vapix.SetParam( device, "ImageSource.I0.DayNight", DayNight, function( error, response ) {
+							msg.error = error;
+							msg.payload = response;
+							if(msg.error)
+								node.warn(error);
+							node.send( msg );
+						});
 					});
 				break;
 

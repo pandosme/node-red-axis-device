@@ -92,12 +92,12 @@ RED.nodes.registerType('axis-camera',{
 					$(".input_filename").hide();
 				break;
 				case "Get Image settings":
-					$(".action_capture").show();
+					$(".action_capture").hide();
 					$(".input_options").hide();
 					$(".input_filename").hide();
 				break;
 				case "Set Image settings":
-					$(".action_capture").show();
+					$(".action_capture").hide();
 					$(".input_options").show();
 					$(".input_filename").hide();
 				break;
@@ -156,10 +156,18 @@ RED.nodes.registerType('axis-camera',{
 	</dl>	
 
 	<dl class="message-properties">
-		<dt>Options<span class="property-type">string | object</span></dt>
-		<dd>Additional options (or use <code>msg.payload</code>). <br/>
-		Image overlay (optional): <code>{"scaleToResolution":true,"alpha": "ffffff"}</code><br/>
-		</dd>
+		<dt>Options (<code>msg.payload</code>) <span class="property-type">string | object</span></dt>
+		<dd>Depends on action (or use <code>msg.payload</code>)</dd>
+	</dl>	
+
+	<dl class="message-properties">
+		<dt>Set image settings<span class="property-type">string | object</span></dt>
+		<dd>Use selected properties from <i>Get Image settings</i>. DayLevel controls IR cut filter (0=off, 100=on, 1-99=auto)</dd>
+	</dl>	
+
+	<dl class="message-properties">
+		<dt>Upload overlay<span class="property-type">string | object</span></dt>
+		<dd>Options (msg.payload): <code>{"scaleToResolution":true,"alpha": "ffffff"}</code><br/></dd>
 	</dl>	
 
 	<h3>Outputs:</h3>

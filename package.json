@@ -28,6 +28,7 @@
       "axis-config": "axis-config.js",
       "axis-device": "axis-device.js",
       "axis-camera": "axis-camera.js",
+      "axis-speaker": "axis-speaker.js",
       "axis-acap": "axis-acap.js",
       "axis-security": "axis-security.js"
     }
@@ -39,5 +40,5 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "version": "0.9.0"
+  "version": "0.9.1"
 }
