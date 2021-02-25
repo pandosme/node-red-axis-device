@@ -80,14 +80,55 @@ module.exports = function(RED) {
 				break;
 
 				case "Camera Info":
-					vapix.DeviceInfo( device, function(error, response ) {
+					vapix.GetParam( device, "properties", function( error, response ) {
+//						console.log(action,"properties",response);
+						var info = {};
 						msg.error = error;
 						msg.payload = response;
-						if(msg.error)
-							node.warn(error);
-						else
-							msg.payload = response.camera;
-						node.send(msg);
+						if( error ) {
+							msg.payload = info;
+							node.send(msg);
+							return;
+						}
+						if( !response.hasOwnProperty("Image") || !response.Image.hasOwnProperty("Format")) {
+							msg.payload = info;
+							msg.error = "No camera info";
+							node.send(msg);
+							return;
+						}
+						info.formats = response.Image.Format.split(","),
+						info.resolutions = response.Image.Resolution.split(",")
+						info.largest = info.resolutions[0];
+						info.medium = "640x480";
+						info.smallest = info.resolutions[info.resolutions.length-1];
+						info.aspect = "4:3";
+						info.rotation = 0;
+						vapix.GetParam( device, "ImageSource.I0", function( error, response ) {
+//							console.log("ImageSource.I0",error, response);
+							if( error || !response ) {
+								msg.payload = info;
+								msg.error = "Unable to read sensor properties";
+								node.send( msg );
+								return;
+							}
+							if( response.hasOwnProperty("I0") ) { 
+								if( response.I0.hasOwnProperty("Sensor") && response.I0.Sensor.hasOwnProperty("AspectRatio") ) {
+									info.aspect  = response.I0.Sensor.AspectRatio;
+									if( info.aspect === "16:9")
+										info.medium = "640x360";
+									if( info.aspect === "4:3")
+										info.medium = "640x480";
+									if( info.aspect === "1:1")
+										info.medium = "640x640";
+									if( info.aspect === "16:10")
+										info.medium = "640x400";
+								}
+								if( response.I0.hasOwnProperty("Rotation") )
+									info.rotation = parseInt(response.I0.Rotation);
+							}
+							msg.payload = info;
+							node.send(msg);
+						});
 					});
 				break;
 

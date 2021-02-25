@@ -131,12 +131,8 @@ exports.DeviceInfo = function( device, callback ) {
 					}
 					if( response.hasOwnProperty("Firmware") && response.Firmware.hasOwnProperty("Version"))
 						info.firmware = response.Firmware.Version;
-					if( response.hasOwnProperty("Image") && response.Image.hasOwnProperty("Format")) {
-						info.camera = {
-							formats: response.Image.Format.split(","),
-							resolutions: response.Image.Resolution.split(",")
-						}
-					}
+					if( response.hasOwnProperty("Image") && response.Image.hasOwnProperty("Format"))
+						info.camera = true;
 					if( response.hasOwnProperty("Audio") && response.Audio.hasOwnProperty("Audio")) {
 						info.audio = response.Audio.Audio;
 					}
@@ -155,38 +151,7 @@ exports.DeviceInfo = function( device, callback ) {
 						if( response.System.hasOwnProperty("HardwareID") )
 							info.hardware = response.System.HardwareID;
 					}
-
-					if( info.camera ) {
-						exports.GetParam( device, "ImageSource.I0", function( error, response ) {
-							if( error ) {
-								callback( error,"Unable to read sensor properties" );
-								return;
-							}
-							info.camera.aspect = "4:3";
-							info.camera.largest = info.camera.resolutions[0];
-							info.camera.medium = "640x480";
-							info.camera.smallest = info.camera.resolutions[ info.camera.resolutions.length-1 ];
-							info.camera.rotation = 0;
-							if( response && response.hasOwnProperty("I0") ) { 
-								if( response.I0.hasOwnProperty("Sensor") && response.I0.Sensor.hasOwnProperty("AspectRatio") ) {
-									info.camera.aspect  = response.I0.Sensor.AspectRatio;
-									if( info.camera.aspect === "16:9")
-										info.camera.medium = "640x360";
-									if( info.camera.aspect === "4:3")
-										info.camera.medium = "640x480";
-									if( info.camera.aspect === "1:1")
-										info.camera.medium = "640x640";
-									if( info.camera.aspect === "16:10")
-										info.camera.medium = "640x400";
-								}
-								if( response.I0.hasOwnProperty("Rotation") )
-									info.camera.rotation = parseInt(response.I0.Rotation);
-							}
-							callback(false,info);
-						});
-					} else {
-						callback(false,info);
-					}
+					callback(false,info);
 				});
 			}
 		});
@@ -561,7 +526,7 @@ exports.Accounts = function( device, action, options, callback) {
 				return;
 			}
 			var cgi  = "/axis-cgi/pwdgrp.cgi?action=remove&user=" + options;
-			AxisDigest.get( device, path, "text", function( error, response ) {
+			AxisDigest.get( device, cgi, "text", function( error, response ) {
 				if( error ) {
 					callback(error, response );
 					return;
