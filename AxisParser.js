@@ -93,11 +93,11 @@ exports.Accounts2JSON = function( data, callback ) {
 	list = [
 		{
 			name: "root",
-			priviliges: "System"
+			privileges: "System"
 		}
 	];
 	accounts.forEach(function(account){
-		var privileges = "Undefined";
+		var privileges = "";
 		viewers.forEach(function(name){
 			if( account === name )
 				privileges = "Viewer"
@@ -110,10 +110,11 @@ exports.Accounts2JSON = function( data, callback ) {
 			if( account === name )
 				privileges = "Admin"
 		})
-		list.push({
-			name: account,
-			privileges: privileges
-		})    
+		if( account.length > 0 && privileges.length > 0 )
+			list.push({
+				name: account,
+				privileges: privileges
+			})    
 	})
 	callback( false, list );
 }

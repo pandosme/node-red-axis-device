@@ -1,13 +1,9 @@
 <script type="text/x-red" data-template-name="axis-security">
     <div class="form-row">
-        <label for="node-input-account"><i class="icon-tag"></i> Credentials</label>
-        <input type="text" id="node-input-account">
+        <label for="node-input-preset"><i class="icon-tag"></i> Device</label>
+        <input type="text" id="node-input-preset">
     </div>
-    <div class="form-row">
-        <label for="node-input-address"><i class="icon-tag"></i> Address</label>
-        <input type="text" id="node-input-address" placeholder="IP or FQDN">
-    </div>
-    
+   
 	<div class="form-row">
         <label for="node-input-action"><i class="icon-tag"></i> Action</label>
         <select id="node-input-action">
@@ -31,7 +27,7 @@ RED.nodes.registerType('axis-security',{
 	category: 'Axis',
 	color: '#FFCC33',
 	defaults: {
-		account: {type:"axis-config"},
+		preset: {type:"axis-preset"},
 		address: {value:""},
 		action: { value:"List accounts"},
 		options: { value:""}
@@ -68,4 +64,35 @@ RED.nodes.registerType('axis-security',{
 </script>
 
 <script type="text/x-red" data-help-name="axis-security">
+	<h3>Inputs:</h3>
+	<dl class="message-properties">
+		<dt>Device<span class="property-type">configuration</span></dt>
+		<dd>A preset device with address, user and password that can be reused in multuple nodes without the need to inject with msg<br/>
+		Properties in device can be left empty and optional inject <code>msg.address</code>, <code>msg.user</code> and <code>msg.password</code></dd>
+	</dl>	
+
+	<dl class="message-properties">
+		<dt>Action<span class="property-type">string</span></dt>
+		<dd>Use <code>msg.action</code> to override config</dd>
+	</dl>	
+
+	<dl class="message-properties">
+		<dt>Options<span class="property-type">string | object | buffer</span></dt>
+		<dd>Depends on action<br/>
+		Use <code>msg.payload</code> to override config.
+		</dd>
+	</dl>	
+
+	<h3>Outputs:</h3>
+	<dl class="message-properties">
+		<dt>msg.error<span class="property-type">bool | string</span></dt>
+		<dd>On success, error will be <code>false</code><br/>
+		On failure, error will be <code>true</code> or message string</dd>
+	</dl>	
+
+	<dl class="message-properties">
+		<dt>msg.payload<span class="property-type">bool | string | buffer</span></dt>
+		<dd>Depends on action</dd>
+	</dl>	
+
 </script>

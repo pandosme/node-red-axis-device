@@ -25,7 +25,7 @@
   "name": "node-red-contrib-axis-device",
   "node-red": {
     "nodes": {
-      "axis-config": "axis-config.js",
+      "axis-config": "axis-preset.js",
       "axis-device": "axis-device.js",
       "axis-camera": "axis-camera.js",
       "axis-speaker": "axis-speaker.js",
@@ -40,5 +40,5 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "version": "0.9.1"
+  "version": "0.9.2"
 }

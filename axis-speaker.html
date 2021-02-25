@@ -1,11 +1,7 @@
 <script type="text/x-red" data-template-name="axis-speaker">
     <div class="form-row">
-        <label for="node-input-account"><i class="icon-tag"></i> Credentials</label>
-        <input type="text" id="node-input-account">
-    </div>
-    <div class="form-row">
-        <label for="node-input-address"><i class="icon-tag"></i> Address</label>
-        <input type="text" id="node-input-address" placeholder="IP or FQDN">
+        <label for="node-input-preset"><i class="icon-tag"></i> Speaker</label>
+        <input type="text" id="node-input-preset">
     </div>
     <div class="form-row">
         <label for="node-input-action"><i class="icon-tag"></i> Action</label>
@@ -32,8 +28,7 @@ RED.nodes.registerType('axis-speaker',{
 	category: 'Axis',
 	color: '#FFCC33',
 	defaults: {
-		account: {type:"axis-config"},
-		address: {value:""},
+		preset: {type:"axis-preset"},
 		action: { value:"Action 1"},
 		options: { value:""},
 		data: { value:""}

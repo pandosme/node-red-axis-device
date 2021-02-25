@@ -16,8 +16,9 @@ exports.Get = function( device, cgi, responseType, callback ) {
 	});
 }
 
-exports.Post = function( device, cgi, payload, callback ) {
-	AxisDigest.post( device, cgi, payload, function( error, body ) {
+exports.Post = function( device, cgi, payload, responseType, callback ) {
+//	console.log("VAPIX.Post", cgi, responseType);
+	AxisDigest.post( device, cgi, payload, responseType, function( error, body ) {
 		callback( error, body );
 	});
 }
@@ -219,7 +220,7 @@ exports.GetTime = function( device, callback ) {
 		"context": "NodeRed",
 		"method": "getDateTimeInfo"
 	};
-	AxisDigest.post( device, "/axis-cgi/time.cgi", body, function(error, response ) {
+	AxisDigest.post( device, "/axis-cgi/time.cgi", body, "json", function(error, response ) {
 		if( !error && response.hasOwnProperty("data") ) {
 			callback( false, response.data );
 			return;
@@ -392,6 +393,7 @@ exports.Account_Remove = function( device, accountName, callback ) {
 }
 
 exports.Upload_Firmare = function( device , options, callback ) {
+//	console.log("Firmware upgrade.");
 	
 	if( Buffer.isBuffer(options)  ) {
 		AxisDigest.upload( device, "firmware", "firmware.bin", options, function( error, response) {
@@ -410,7 +412,23 @@ exports.Upload_Firmare = function( device , options, callback ) {
 	}	
 
 	AxisDigest.upload( device, "firmware", "firmware.bin", null, fs.createReadStream(options), function( error, response) {
-		callback( error, response );
+//		console.log("Firmware upgrade: ", error, response);
+		if( !error ) {
+			callback( error, response );
+			return;
+		}
+		//Possible an old API version.  Try the legacy firmware upload
+		console.error("Firmware upgrade failed. Trying the legacy upgrade API");
+		AxisDigest.upload( device, "firmware_legacy", "firmware.bin", null, fs.createReadStream(options), function( error, response) {
+			if( error ) {
+				callback(error, response);
+				return;
+			}
+			if( response.search("Error") > 0 ) 
+				callback( "Upgrade failed", response );
+			else
+				callback( false, response );
+		});
 	});
 }
 
@@ -456,7 +474,14 @@ exports.Upload_ACAP = function( device , options, callback ) {
 	}	
 
 	AxisDigest.upload( device, "acap", "acap.eap", null, fs.createReadStream(options), function( error, response) {
-		callback( error, response );
+		if(!error) {
+			callback( error, response );
+			return;
+		}
+		console.log("ACAP upload failed.  Testing legacy ACAP upload CGI...");
+		AxisDigest.upload( device, "acap_legacy", "acap.eap", null, fs.createReadStream(options), function( error, response) {
+			callback( error, response );
+		});
 	});
 }
 

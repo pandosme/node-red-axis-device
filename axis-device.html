@@ -1,16 +1,12 @@
 <script type="text/x-red" data-template-name="axis-device">
     <div class="form-row">
-        <label for="node-input-account"><i class="icon-tag"></i> Credentials</label>
-        <input type="text" id="node-input-account">
-    </div>
-    <div class="form-row">
-        <label for="node-input-address"><i class="icon-tag"></i> Address</label>
-        <input type="text" id="node-input-address" placeholder="IP or FQDN">
+        <label for="node-input-preset"><i class="icon-tag"></i> Device</label>
+        <input type="text" id="node-input-preset">
     </div>
     <div class="form-row">
         <label for="node-input-action"><i class="icon-tag"></i> Action</label>
         <select id="node-input-action">
-            <option value="Device Info">Device Info</option>
+            <option value="Device Info">Info</option>
             <option value="HTTP Get">HTTP Get</option>
             <option value="HTTP Post">HTTP Post</option>
             <option value="Syslog">Syslog</option>
@@ -35,16 +31,15 @@
         <label for="node-input-filename"><i class="icon-tag"></i> Filename</label>
         <input type="text" id="node-input-filename" placeholder="File path">
     </div>
-	
 </script>
+
 
 <script type="text/javascript">
 RED.nodes.registerType('axis-device',{
 	category: 'Axis',
 	color: '#FFCC33',
 	defaults: {
-		account: {type:"axis-config"},
-		address: {value:""},
+		preset: {type:"axis-preset"},
 		action: { value:"Device Info"},
 		cgi: { value:""},
 		data: {value:""},
@@ -110,15 +105,14 @@ RED.nodes.registerType('axis-device',{
 <script type="text/x-red" data-help-name="axis-device">
 	<h3>Inputs:</h3>
 	<dl class="message-properties">
-		<dt>credentials<span class="property-type">configuration</span></dt>
-		<dd>Camera credentials user and password is required.<br/>
-		Use <code>msg.user</code> and <code>msg.password</code> to override config</dd>
+		<dt>Device<span class="property-type">configuration</span></dt>
+		<dd>A preset device with address, user and password that can be reused in multuple nodes without the need to inject with msg<br/>
+		Properties in device can be left empty and optional inject <code>msg.address</code>, <code>msg.user</code> and <code>msg.password</code></dd>
 	</dl>	
-	
+
 	<dl class="message-properties">
-		<dt>address<span class="property-type">string</span></dt>
-		<dd>IP address or FQDN.<br/>
-		Use <code>msg.address</code> to override config</dd>
+		<dt>Action<span class="property-type">string</span></dt>
+		<dd>Use <code>msg.action</code> to override config</dd>
 	</dl>	
 
 	<dl class="message-properties">

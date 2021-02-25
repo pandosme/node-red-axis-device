@@ -4,8 +4,7 @@ module.exports = function(RED) {
 	
 	function Axis_Camera(config) {
 		RED.nodes.createNode(this,config);
-		this.account = config.account;
-		this.address = config.address;
+		this.preset = config.preset;		
 		this.action = config.action;
 		this.resolution = config.resolution;
 		this.output = config.output;
@@ -14,38 +13,52 @@ module.exports = function(RED) {
 		
 		var node = this;
 		node.on('input', function(msg) {
-			var account = RED.nodes.getNode(node.account);
-			var address = msg.address || node.address;
+			node.status({});
+			var address = null;
+			var user = null;
+			var password = null;
+			var protocol = "http";
+			var preset = RED.nodes.getNode(node.preset);
+
+			if( preset ) {
+				address = preset.address;
+				user = preset.credentials.user;
+				password = preset.credentials.password;
+				protocol = preset.protocol || "http";
+			}
+			if( msg.address )
+				address = msg.address;
+			if(!address || address.length < 3) {
+				msg.error = "Address undefined";
+				node.warn(msg.error);
+				return;
+			}
+			
+			if( msg.user )	user = msg.user;
+			if(!user || user.length < 2) {
+				msg.error = "User name undefined";
+				node.warn(msg.error);
+				return;
+			}
+			
+			if( msg.password )
+				password = msg.password;
+			if(!password || password.length < 3) {
+				msg.error = "Password undefined";
+				node.warn(msg.error);
+				return;
+			}
+
+			var device = {
+				url: protocol + '://' + address,
+				user: user,
+				password: password
+			}
+			
 			var action = msg.action || node.action;
 			var filename = msg.filename || node.filename;
 			var options = node.options || msg.payload;
 			
-			var device = {
-				url: account.protocol + '://' + address,
-				user: msg.user || account.name,
-				password: msg.password || account.credentials.password
-			}
-			if( !device.user || device.user.length < 2){
-				msg.error = true;
-				msg.payload = "Invalid user account name";
-				node.warn(msg.payload);
-				node.send(msg);
-				return;
-			}
-			if( !device.password || device.password.length < 2){
-				msg.error = true;
-				msg.payload = "Invalid account password";
-				node.warn(msg.payload);
-				node.send(msg);
-				return;
-			}
-			if( !device.url || device.url.length < 3) {
-				msg.error = true;
-				msg.payload = "Invalid device address";
-				node.warn(msg.payload);
-				node.send(msg);
-				return;
-			}
 			msg.error = false;
 			
 			switch( action ) {
@@ -185,9 +198,7 @@ module.exports = function(RED) {
 	
     RED.nodes.registerType("axis-camera",Axis_Camera,{
 		defaults: {
-            name: {type:"text"},
-			account: {type:"axis-config"},
-			address: {type:"text"},
+			preset: {type:"axis-preset"},
 			action: { type:"text" },
 			resolution: { type:"text" },
 			output: { type:"text" },

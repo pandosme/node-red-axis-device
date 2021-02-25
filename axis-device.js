@@ -4,49 +4,60 @@ module.exports = function(RED) {
 	
     function Axis_Device(config) {
 		RED.nodes.createNode(this,config);
-		this.account = config.account;
-		this.address = config.address;
+		this.preset = config.preset;
 		this.action = config.action;
 		this.cgi = config.cgi;
 		this.data = config.data;
 		this.filename = config.filename;
 		var node = this;
 		node.on('input', function(msg) {
-			var account = RED.nodes.getNode(node.account);
-			var address = msg.address || node.address;
+			var address = null;
+			var user = null;
+			var password = null;
+			var protocol = "http";
+			var preset = RED.nodes.getNode(node.preset);
+
+			if( preset ) {
+				address = preset.address;
+				user = preset.credentials.user;
+				password = preset.credentials.password;
+				protocol = preset.protocol || "http";
+			}
+			if( msg.address )
+				address = msg.address;
+			if(!address || address.length < 3) {
+				msg.error = "Address undefined";
+				node.warn(msg.error);
+				return;
+			}
+			
+			if( msg.user )	user = msg.user;
+			if(!user || user.length < 2) {
+				msg.error = "User name undefined";
+				node.warn(msg.error);
+				return;
+			}
+			
+			if( msg.password )
+				password = msg.password;
+			if(!password || password.length < 3) {
+				msg.error = "Password undefined";
+				node.warn(msg.error);
+				return;
+			}
+
+			var device = {
+				url: protocol + '://' + address,
+				user: user,
+				password: password
+			}
+
+			node.status({});
 			var action = msg.action || node.action;
 			var payload = node.data || msg.payload;
 			var filename = msg.filename || node.filename;
-			
-			node.status({});
-			
-			var device = {
-				url: account.protocol + '://' + address,
-				user: msg.user || account.name,
-				password: msg.password || account.credentials.password
-			}
-			if( !device.user || device.user.length < 2){
-				msg.error = true;
-				msg.payload = "Invalid user account name";
-				node.warn(msg.payload);
-				node.send(msg);
-				return;
-			}
-			if( !device.password || device.password.length < 2){
-				msg.error = true;
-				msg.payload = "Invalid account password";
-				node.warn(msg.payload);
-				node.send(msg);
-				return;
-			}
-			if( !device.url || device.url.length < 3) {
-				msg.error = true;
-				msg.payload = "Invalid device address";
-				node.warn(msg.payload);
-				node.send(msg);
-				return;
-			}
 			msg.error = false;
+			
 			switch( action ) {
 				case "Device Info":
 					vapix.DeviceInfo( device, function(error, response ) {
@@ -65,7 +76,7 @@ module.exports = function(RED) {
 						"method": "getNetworkInfo",
 						"params":{}
 					}
-					vapix.Post( device, "/axis-cgi/network_settings.cgi", body, function(error, response ) {
+					vapix.Post( device, "/axis-cgi/network_settings.cgi", body,"json", function(error, response ) {
 						msg.error = error;
 						if(msg.error)
 							node.warn("Network info request failed");
@@ -104,8 +115,8 @@ module.exports = function(RED) {
 							node.warn("Device upgrade failed");
 							node.status({fill:"red",shape:"dot",text:"Device upgrade failed"});
 						} else {
-							node.status({fill:"green",shape:"dot",text:"Device upgraded"});
-							msg.payload = "Device upgraded";
+							node.status({fill:"green",shape:"dot",text:"Device upgrade success"});
+							msg.payload = "Device upgraded and restarted";
 						}
 						node.send(msg);
 					});
@@ -145,10 +156,17 @@ module.exports = function(RED) {
 						node.send(msg);
 						return;
 					}
-					vapix.Post( device, cgi, payload, function(error, response ) {
+					node.status({fill:"blue",shape:"dot",text:"Requesting..."});
+					
+					vapix.Post( device, cgi, payload, "text", function(error, response ) {
+						if( error )
+							node.status({fill:"red",shape:"dot",text:"Request failed"});
+						else
+							node.status({fill:"red",shape:"dot",text:"Request success"});
+							
 						msg.error = error;
 						msg.payload = response;
-						if( typeof msg.payload === "string" ) {
+						if( typeof msg.payload === "string" && (msg.payload[0] === '{' || msg.payload[0] === '[') ) {
 							var json = JSON.parse(response);
 							if( json )
 								msg.payload = json;
@@ -215,9 +233,7 @@ module.exports = function(RED) {
 	
     RED.nodes.registerType("axis-device",Axis_Device,{
 		defaults: {
-            name: {type:"text"},
-			account: {type:"axis-config"},
-			address: {type:"text"},
+			preset: {type:"axis-preset"},
 			action: { type:"text" },
 			data: {type: "text"},
 			cgi: {type: "text"},

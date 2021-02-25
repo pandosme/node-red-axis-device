@@ -43,7 +43,8 @@ exports.get = function( device, path, resonseType, callback ) {
 
 }
 
-exports.post = function( device, path, body, callback ) {
+exports.post = function( device, path, body, responseType, callback ) {
+//	console.log("AxisDigest", path, responseType);
 	var client = got.extend({
 		hooks:{
 			afterResponse: [
@@ -51,7 +52,7 @@ exports.post = function( device, path, body, callback ) {
 					const options = res.request.options;
 					const digestHeader = res.headers["www-authenticate"];
 					if (!digestHeader){
-						console.error("Camera Get: Response contains no digest header");
+						console.error("Response contains no digest header");
 						return res;
 					}
 					const incomingDigest = digestAuth.ClientDigestAuth.analyze(	digestHeader );
@@ -67,28 +68,17 @@ exports.post = function( device, path, body, callback ) {
 		}
 	});
 
-	var json = null;
-	if( typeof body === "object" )
-		json = body;
-	if( typeof body === "string" && body[0] !== "<")
-		json = JSON.parse( body );
-
 	(async () => {
 		try {
-			var response = null;
-			if( json )
-				response = await client.post( device.url+path, {
-					json: json,
-					responseType: 'json',
-					https: {rejectUnauthorized: false}
-				});
-			else
-				response = await client.post( device.url+path, {
-					body: body,
-					https: {rejectUnauthorized: false}
-				});
+			response = await client.post( device.url+path, {
+				body: body,
+				responseType: responseType,
+				https: {rejectUnauthorized: false}
+			});
+//			console.log("AxisDigest Post Response:", response.body );
 			callback(false, response.body );
 		} catch (error) {
+//			console.log("AxisDigest Post Response Error:", error );
 			callback(error, error  );
 		}
 	})();
@@ -110,7 +100,7 @@ exports.Soap = function( device, body, callback ) {
 					   
 	soapEnvelope += '<SOAP-ENV:Body>' + body + '</SOAP-ENV:Body>';
 	soapEnvelope += '</SOAP-ENV:Envelope>';
-	exports.post( device, '/vapix/services', soapEnvelope, function( error, response) {
+	exports.post( device, '/vapix/services', soapEnvelope,"text", function( error, response) {
 		callback(error,response);
 	});
 }
@@ -139,18 +129,10 @@ exports.upload = function( device, type, filename, options, buffer, callback ) {
 
 	var formData = {
 		apiVersion: "1.0",
-		method: "uploadOverlayImage",
-		params:{
-			scaleToResolution:true
-		}
-	};
-
-
-	var formData = {
-		apiVersion: "1.0",
 		context: "nodered",
-		method: "upgrade"
+		method: ""
 	}
+	
 	var url = null;
 	var part1 = null;
 	var part2 = null;
@@ -164,6 +146,14 @@ exports.upload = function( device, type, filename, options, buffer, callback ) {
 			formData.method = "upgrade";
 			contenttype = "application/octet-stream";
 		break;
+
+		case "firmware_legacy":
+			url =  device.url + '/axis-cgi/firmwareupgrade.cgi?type=normal';
+			part1 = null;
+			part2 = "fileData";
+			contenttype = "application/octet-stream";
+		break;
+
 		case "acap":
 			url = device.url + "/axis-cgi/packagemanager.cgi";
 			part1 = "data";
@@ -171,6 +161,14 @@ exports.upload = function( device, type, filename, options, buffer, callback ) {
 			formData.method = "install";
 			contenttype = "application/octet-stream";
 		break;
+
+		case "acap_legacy":
+			url = device.url + "/axis-cgi/applications/upload.cgi";
+			part1 = null;
+			part2 = "packfil";
+			contenttype = "application/octet-stream";
+		break;
+		
 		case "overlay":
 			url =  device.url + '/axis-cgi/uploadoverlayimage.cgi';
 			part1 = "json";
@@ -210,22 +208,26 @@ exports.upload = function( device, type, filename, options, buffer, callback ) {
 					});
 					
 					const form = new FormData();
-					form.append(
-						part1,
-						formJSON,
-						{
-							filename: "blob",
-							contentType: "application/json",
-						}
-					);
-					form.append(
-						part2,
-						buffer,
-						{
-							filename: filename,
-							contentType: contenttype
-						}
-					);
+					if( part1 ) {
+						form.append(
+							part1,
+							formJSON,
+							{
+								filename: "blob",
+								contentType: "application/json",
+							}
+						);
+					};
+					if( part2 ) {
+						form.append(
+							part2,
+							buffer,
+							{
+								filename: filename,
+								contentType: contenttype
+							}
+						);
+					};
 					options.headers = form.getHeaders();
 					options.headers.authorization = digest.raw;
 					options.body = form;
@@ -238,10 +240,16 @@ exports.upload = function( device, type, filename, options, buffer, callback ) {
 	(async () => {
 		try {
 			const response = await client.post(url);
-			json = JSON.parse( response.body );
-			if( json && json.hasOwnProperty("error") ) {
-				callback("Upload failed", json.error );
-				return;
+//			console.log("AxisDigest Upload Response", response.body);
+			if( typeof response.body === "string" && ( response.body[0] === '{' || response.body[0] === '[' ) ) {
+				var json = JSON.parse( response.body );
+				if( json ) {
+					if( json.hasOwnProperty("error") )
+						callback("Upload failed", json.error );
+					else
+						callback(false, json );
+					return;
+				}
 			}
 			callback(false, response.body );
 		} catch (error) {
@@ -249,4 +257,3 @@ exports.upload = function( device, type, filename, options, buffer, callback ) {
 		}
 	})();
 }
-
