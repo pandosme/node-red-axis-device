@@ -1,4 +1,4 @@
-const vapix = require('./vapix.js');
+const VapixWrapper = require('vapix-wrapper');
 
 module.exports = function(RED) {
 	
@@ -11,48 +11,26 @@ module.exports = function(RED) {
 		this.filename = config.filename;
 		var node = this;
 		node.on('input', function(msg) {
-			var address = null;
-			var user = null;
-			var password = null;
-			var protocol = "http";
-			var preset = RED.nodes.getNode(node.preset);
-
-			if( preset ) {
-				address = preset.address;
-				user = preset.credentials.user;
-				password = preset.credentials.password;
-				protocol = preset.protocol || "http";
-			}
-			if( msg.address )
-				address = msg.address;
-			if(!address || address.length < 3) {
-				msg.error = "Address undefined";
-				node.warn(msg.error);
-				return;
-			}
-			
-			if( msg.user )	user = msg.user;
-			if(!user || user.length < 2) {
-				msg.error = "User name undefined";
-				node.warn(msg.error);
-				return;
-			}
-			
-			if( msg.password )
-				password = msg.password;
-			if(!password || password.length < 3) {
-				msg.error = "Password undefined";
-				node.warn(msg.error);
-				return;
-			}
+			node.status({});
 
 			var device = {
-				url: protocol + '://' + address,
-				user: user,
-				password: password
+				address: null,
+				user: null,
+				password: null,
+				protocol: "http"
 			}
 
-			node.status({});
+			var preset = RED.nodes.getNode(node.preset);
+			if( preset ) {
+				device.address = preset.address;
+				device.user = preset.credentials.user;
+				device.password = preset.credentials.password;
+				device.protocol = preset.protocol || "http";
+			}
+			if( msg.address ) device.address = msg.address;
+			if( msg.user ) device.user = msg.user;
+			if( msg.password ) device.password = msg.password;
+
 			var action = msg.action || node.action;
 			var payload = node.data || msg.payload;
 			var filename = msg.filename || node.filename;
@@ -60,7 +38,7 @@ module.exports = function(RED) {
 			
 			switch( action ) {
 				case "Device Info":
-					vapix.DeviceInfo( device, function(error, response ) {
+					VapixWrapper.DeviceInfo( device, function(error, response ) {
 						msg.error = error;
 						if(msg.error)
 							node.warn(error);
@@ -70,13 +48,13 @@ module.exports = function(RED) {
 				break;
 
 				case "Network settings":
-					var body = {
+					var request = {
 						"apiVersion": "1.0",
 						"context": "nodered",
 						"method": "getNetworkInfo",
 						"params":{}
 					}
-					vapix.Post( device, "/axis-cgi/network_settings.cgi", body,"json", function(error, response ) {
+					VapixWrapper.CGI_Post( device, "/axis-cgi/network_settings.cgi", request, function(error, response ) {
 						msg.error = error;
 						if(msg.error)
 							node.warn("Network info request failed");
@@ -95,7 +73,7 @@ module.exports = function(RED) {
 				break;
 				
 				case "Restart":
-					vapix.Reboot( device, function( error, response) {
+					VapixWrapper.Reboot( device, function( error, response) {
 						msg.payload = response;
 						msg.error = error;
 						if( msg.error ) {
@@ -108,7 +86,7 @@ module.exports = function(RED) {
 				case "Upgrade firmware":
 					node.status({fill:"blue",shape:"dot",text:"Updating firmware..."});
 					var data = filename || msg.payload;
-					vapix.Upload_Firmare( device , data, function(error, response ) {
+					VapixWrapper.Upload_Firmare( device , data, function(error, response ) {
 						msg.payload = response;
 						msg.error = error;
 						if(msg.error) {
@@ -129,7 +107,7 @@ module.exports = function(RED) {
 						node.warn(msg.error);
 						return;
 					}
-					vapix.Get( device, cgi, "text", function(error, response ) {
+					VapixWrapper.HTTP_Get( device, cgi, "text", function(error, response ) {
 						msg.error = error;
 						msg.payload = response;
 						if( typeof msg.payload === "string") {
@@ -158,7 +136,7 @@ module.exports = function(RED) {
 					}
 					node.status({fill:"blue",shape:"dot",text:"Requesting..."});
 					
-					vapix.Post( device, cgi, payload, "text", function(error, response ) {
+					VapixWrapper.HTTP_Post( device, cgi, payload, "text", function(error, response ) {
 						if( error )
 							node.status({fill:"red",shape:"dot",text:"Request failed"});
 						else
@@ -176,7 +154,7 @@ module.exports = function(RED) {
 				break;
 
 				case "Syslog":
-					vapix.Syslog( device, function( error, response) {
+					VapixWrapper.Syslog( device, function( error, response) {
 						msg.payload = response;
 						msg.error = error;
 						node.send(msg);
@@ -184,7 +162,7 @@ module.exports = function(RED) {
 				break;
 
 				case "Get time":
-					vapix.GetTime( device, function( error, response) {
+					VapixWrapper.GetTime( device, function( error, response) {
 						msg.payload = response;
 						msg.error = error;
 						node.send(msg);
@@ -192,7 +170,7 @@ module.exports = function(RED) {
 				break;
 
 				case "Connections":
-					vapix.Connections( device, function( error, response) {
+					VapixWrapper.Connections( device, function( error, response) {
 						msg.payload = response;
 						msg.error = error;
 						node.send(msg);
@@ -200,7 +178,7 @@ module.exports = function(RED) {
 				break;
 
 				case "Get location":
-					vapix.GetLocation( device, function( error, response) {
+					VapixWrapper.Location_Get( device, function( error, response) {
 						msg.payload = response;
 						msg.error = error;
 						node.send(msg);
@@ -214,7 +192,7 @@ module.exports = function(RED) {
 						node.send(msg);
 						return;
 					}
-					vapix.SetLocation( device, payload, function( error, response) {
+					VapixWrapper.Location_Set( device, payload, function( error, response) {
 						msg.payload = response;
 						msg.error = error;
 						node.send(msg);

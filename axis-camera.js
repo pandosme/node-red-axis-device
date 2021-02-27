@@ -1,4 +1,4 @@
-const vapix = require('./vapix.js');
+const VapixWrapper = require('vapix-wrapper');
 
 module.exports = function(RED) {
 	
@@ -14,46 +14,23 @@ module.exports = function(RED) {
 		var node = this;
 		node.on('input', function(msg) {
 			node.status({});
-			var address = null;
-			var user = null;
-			var password = null;
-			var protocol = "http";
-			var preset = RED.nodes.getNode(node.preset);
-
-			if( preset ) {
-				address = preset.address;
-				user = preset.credentials.user;
-				password = preset.credentials.password;
-				protocol = preset.protocol || "http";
-			}
-			if( msg.address )
-				address = msg.address;
-			if(!address || address.length < 3) {
-				msg.error = "Address undefined";
-				node.warn(msg.error);
-				return;
-			}
-			
-			if( msg.user )	user = msg.user;
-			if(!user || user.length < 2) {
-				msg.error = "User name undefined";
-				node.warn(msg.error);
-				return;
-			}
-			
-			if( msg.password )
-				password = msg.password;
-			if(!password || password.length < 3) {
-				msg.error = "Password undefined";
-				node.warn(msg.error);
-				return;
-			}
-
 			var device = {
-				url: protocol + '://' + address,
-				user: user,
-				password: password
+				address: null,
+				user: null,
+				password: null,
+				protocol: "http"
 			}
+
+			var preset = RED.nodes.getNode(node.preset);
+			if( preset ) {
+				device.address = preset.address;
+				device.user = preset.credentials.user;
+				device.password = preset.credentials.password;
+				device.protocol = preset.protocol || "http";
+			}
+			if( msg.address ) device.address = msg.address;
+			if( msg.user ) device.user = msg.user;
+			if( msg.password ) device.password = msg.password;
 			
 			var action = msg.action || node.action;
 			var filename = msg.filename || node.filename;
@@ -66,7 +43,7 @@ module.exports = function(RED) {
 					var resolution = "resolution=" + node.resolution;
 					if( msg.resolution )
 						resolution = "resolution=" + msg.resolution;
-					vapix.JPEG( device, resolution, function( error, response) {
+					VapixWrapper.JPEG( device, resolution, function( error, response) {
 						msg.payload = response;
 						msg.error = error;
 						if( msg.error ) {
@@ -80,7 +57,7 @@ module.exports = function(RED) {
 				break;
 
 				case "Camera Info":
-					vapix.GetParam( device, "properties", function( error, response ) {
+					VapixWrapper.Param_Get( device, "properties", function( error, response ) {
 //						console.log(action,"properties",response);
 						var info = {};
 						msg.error = error;
@@ -103,7 +80,7 @@ module.exports = function(RED) {
 						info.smallest = info.resolutions[info.resolutions.length-1];
 						info.aspect = "4:3";
 						info.rotation = 0;
-						vapix.GetParam( device, "ImageSource.I0", function( error, response ) {
+						VapixWrapper.Param_Get( device, "ImageSource.I0", function( error, response ) {
 //							console.log("ImageSource.I0",error, response);
 							if( error || !response ) {
 								msg.payload = info;
@@ -133,7 +110,7 @@ module.exports = function(RED) {
 				break;
 
 				case "Get Image settings":
-					vapix.GetParam( device, "ImageSource.I0.Sensor", function( error, response ) {
+					VapixWrapper.Param_Get( device, "ImageSource.I0.Sensor", function( error, response ) {
 						msg.error = error;
 						msg.payload = response;
 						if(msg.error) {
@@ -149,7 +126,7 @@ module.exports = function(RED) {
 							WhiteBalance: response.I0.Sensor.WhiteBalance,
 							WDR: response.I0.Sensor.WDR
 						}
-						vapix.GetParam( device, "ImageSource.I0.DayNight", function( error, response ) {
+						VapixWrapper.Param_Get( device, "ImageSource.I0.DayNight", function( error, response ) {
 							msg.error = error;
 							msg.payload = response;
 							if(msg.error) {  //Camera does not have DayNight
@@ -173,7 +150,7 @@ module.exports = function(RED) {
 						options = JSON.parse(options);
 					var sensor = JSON.parse( JSON.stringify(options) );
 					delete sensor.DayLevel;
-					vapix.SetParam( device, "ImageSource.I0.Sensor", sensor, function( error, response ) {
+					VapixWrapper.Param_Set( device, "ImageSource.I0.Sensor", sensor, function( error, response ) {
 						msg.error = error;
 						msg.payload = response;
 						if(msg.error) {
@@ -193,7 +170,7 @@ module.exports = function(RED) {
 							DayNight.IrCutFilter = "no";
 						if( options.DayLevel === 100 )
 							DayNight.IrCutFilter = "yes";
-						vapix.SetParam( device, "ImageSource.I0.DayNight", DayNight, function( error, response ) {
+						VapixWrapper.Param_Set( device, "ImageSource.I0.DayNight", DayNight, function( error, response ) {
 							msg.error = error;
 							msg.payload = response;
 							if(msg.error)
@@ -216,7 +193,7 @@ module.exports = function(RED) {
 						options = null;
 					if( typeof options === "string" )
 						options = JSON.parse( options );
-					vapix.Upload_Overlay( device, filename, options, function(error, response){
+					VapixWrapper.Upload_Overlay( device, filename, options, function(error, response){
 						msg.error = error;
 						msg.payload = response;
 						if( error ) {
