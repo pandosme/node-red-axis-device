@@ -32,8 +32,15 @@ module.exports = function(RED) {
 			if( msg.password ) device.password = msg.password;
 
 			var action = msg.action || node.action;
-			var payload = node.data || msg.payload;
+			var data = node.data || msg.payload;
 			var filename = msg.filename || node.filename;
+			
+			console.log("axis-device", {
+				address: device.address,
+				action: action,
+				data: data
+			});
+			
 			msg.error = false;
 			
 			switch( action ) {
@@ -85,7 +92,6 @@ module.exports = function(RED) {
 
 				case "Upgrade firmware":
 					node.status({fill:"blue",shape:"dot",text:"Updating firmware..."});
-					var data = filename || msg.payload;
 					VapixWrapper.Upload_Firmare( device , data, function(error, response ) {
 						msg.payload = response;
 						msg.error = error;
@@ -128,7 +134,7 @@ module.exports = function(RED) {
 						node.warn(msg.error);
 						return;
 					}
-					if(!payload) {
+					if(!data) {
 						msg.error = "Invalid payload";
 						node.warn(msg.error);
 						node.send(msg);
@@ -136,19 +142,13 @@ module.exports = function(RED) {
 					}
 					node.status({fill:"blue",shape:"dot",text:"Requesting..."});
 					
-					VapixWrapper.HTTP_Post( device, cgi, payload, "text", function(error, response ) {
+					VapixWrapper.CGI_Post( device, cgi, data, function(error, response ) {
 						if( error )
 							node.status({fill:"red",shape:"dot",text:"Request failed"});
 						else
-							node.status({fill:"red",shape:"dot",text:"Request success"});
-							
+							node.status({fill:"green",shape:"dot",text:"Request success"});
 						msg.error = error;
 						msg.payload = response;
-						if( typeof msg.payload === "string" && (msg.payload[0] === '{' || msg.payload[0] === '[') ) {
-							var json = JSON.parse(response);
-							if( json )
-								msg.payload = json;
-						}
 						node.send(msg);
 					});
 				break;
@@ -186,13 +186,13 @@ module.exports = function(RED) {
 				break;
 
 				case "Set location":
-					if(!payload || typeof payload === "number" || typeof payload === "boolean") {
+					if(!data || typeof data === "number" || typeof data === "boolean") {
 						msg.error = "Invalid input";
 						msg.payload = "Invalid location data";
 						node.send(msg);
 						return;
 					}
-					VapixWrapper.Location_Set( device, payload, function( error, response) {
+					VapixWrapper.Location_Set( device, data, function( error, response) {
 						msg.payload = response;
 						msg.error = error;
 						node.send(msg);
