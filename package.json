@@ -1,10 +1,10 @@
 {
   "name": "node-red-contrib-axis-device",
-  "version": "0.9.3",
-  "description": "Simplify integration with common Axis VAPIX and ONVIF usage",
+  "version": "0.9.8",
+  "description": "Simplify integration and management of Axis cameras and devices",
   "author": {
     "name": "Fred Juhlin",
-    "email": "fred@juhlin.me"
+    "email": "fred.juhlin@gmail.com"
   },
   "license": "MIT",
   "bugs": {

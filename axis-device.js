@@ -38,7 +38,8 @@ module.exports = function(RED) {
 			console.log("axis-device", {
 				address: device.address,
 				action: action,
-				data: data
+				data: data,
+				filename: filename
 			});
 			
 			msg.error = false;
@@ -46,6 +47,7 @@ module.exports = function(RED) {
 			switch( action ) {
 				case "Device Info":
 					VapixWrapper.DeviceInfo( device, function(error, response ) {
+//						console.log("DeviceInfo:", error, response);
 						msg.error = error;
 						if(msg.error)
 							node.warn(error);
@@ -80,19 +82,22 @@ module.exports = function(RED) {
 				break;
 				
 				case "Restart":
-					VapixWrapper.Reboot( device, function( error, response) {
-						msg.payload = response;
+					VapixWrapper.CGI( device, '/axis-cgi/restart.cgi', function(error, response) {
 						msg.error = error;
-						if( msg.error ) {
-							node.warn("Device restart failed");
+						msg.payload = response;
+						if( error ) {
+							node.send(msg);
+							return;
 						}
 						node.send(msg);
+						msg.payload = "Device restarting...";
 					});
 				break;
 
 				case "Upgrade firmware":
+					var firmware = filename || msg.payload
 					node.status({fill:"blue",shape:"dot",text:"Updating firmware..."});
-					VapixWrapper.Upload_Firmare( device , data, function(error, response ) {
+					VapixWrapper.Upload_Firmare( device , firmware, function(error, response ) {
 						msg.payload = response;
 						msg.error = error;
 						if(msg.error) {
@@ -114,6 +119,7 @@ module.exports = function(RED) {
 						return;
 					}
 					VapixWrapper.HTTP_Get( device, cgi, "text", function(error, response ) {
+
 						msg.error = error;
 						msg.payload = response;
 						if( typeof msg.payload === "string") {
@@ -141,28 +147,22 @@ module.exports = function(RED) {
 						return;
 					}
 					node.status({fill:"blue",shape:"dot",text:"Requesting..."});
-					
-					VapixWrapper.CGI_Post( device, cgi, data, function(error, response ) {
+					VapixWrapper.HTTP_Post( device, cgi, data, "text", function(error, response ) {
+						msg.error = error;
 						if( error )
 							node.status({fill:"red",shape:"dot",text:"Request failed"});
 						else
 							node.status({fill:"green",shape:"dot",text:"Request success"});
-						msg.error = error;
-						msg.payload = response;
+						if( typeof response === "string" && (response[0] === '{' << response[0] === '[') )
+							msg.payload =  JSON.parse(response);
+						else
+							msg.payload = response;
 						node.send(msg);
 					});
 				break;
 
 				case "Syslog":
 					VapixWrapper.Syslog( device, function( error, response) {
-						msg.payload = response;
-						msg.error = error;
-						node.send(msg);
-					});
-				break;
-
-				case "Get time":
-					VapixWrapper.GetTime( device, function( error, response) {
 						msg.payload = response;
 						msg.error = error;
 						node.send(msg);
