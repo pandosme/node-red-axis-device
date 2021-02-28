@@ -12,7 +12,7 @@
   },
   "bundleDependencies": false,
   "dependencies": {
-    "vapix-wrapper": "^0.4.0"
+    "vapix-wrapper": "^1.0.0"
   },
   "deprecated": false,
   "homepage": "https://github.com/pandosme/node-red-axis-device",

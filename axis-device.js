@@ -35,12 +35,7 @@ module.exports = function(RED) {
 			var data = node.data || msg.payload;
 			var filename = msg.filename || node.filename;
 			
-			console.log("axis-device", {
-				address: device.address,
-				action: action,
-				data: data,
-				filename: filename
-			});
+//			console.log("axis-device", {address: device.address,action: action,data: data,filename: filename});
 			
 			msg.error = false;
 			
