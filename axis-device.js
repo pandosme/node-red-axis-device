@@ -1,3 +1,5 @@
+//Copyright (c) 2021 Fred Juhlin
+
 const VapixWrapper = require('vapix-wrapper');
 
 module.exports = function(RED) {
