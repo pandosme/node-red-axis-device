@@ -105,18 +105,44 @@ RED.nodes.registerType('axis-device',{
 	<h3>Inputs:</h3>
 	<dl class="message-properties">
 		<dt>Device<span class="property-type">configuration</span></dt>
-		<dd>A preset device with address, user and password that can be reused in multuple nodes without the need to inject with msg<br/>
+		<dd>A preset device with address, user and password that can be reused in multiple nodes without the need to inject with msg<br/>
 		Properties in device can be left empty and optional inject <code>msg.address</code>, <code>msg.user</code> and <code>msg.password</code></dd>
 	</dl>	
 
 	<dl class="message-properties">
 		<dt>Action<span class="property-type">string</span></dt>
 		<dd>Use <code>msg.action</code> to override config</dd>
-	</dl>	
-
-	<dl class="message-properties">
-		<dt>Action<span class="property-type">string</span></dt>
-		<dd>Use <code>msg.action</code> to override config</dd>
+		<ul>
+			<li><b>Device Info:</b><br/>
+			Gets information about the Axis device.
+			</li>
+			<li><b>Syslog:</b><br/>
+			A list of the device syslog messages
+			</li>
+			<li><b>Connections:</b><br/>
+			A list of current netork connections to the device
+			</li>
+			<li><b>Get Location:</b><br/>
+			Geo location data stored on the device.
+			</li>
+			<li><b>Set Location:</b><br/>
+			Updates the device Geo location.  Payload needs to be the same struture recived by Get Location.<br/>
+			Goe location data can be injected with <code>msg.payload</code> if node config data is left blank.
+			</li>
+			<li><b>Upgrade firmware:</b><br/>
+			Payload can be either a file path to the firmware file or a file buffer.  If <code>msg.filename</code> is set, <code>msg.payload</code> will be ignored.
+			</li>
+			<li><b>Restart:</b><br/>
+			Reboots the device.
+			</li>
+			<li><b>HTTP Get:</b><br/>
+			Make VAPIX request for operations not supported in this node. VAPIX paths will typical start with "/axis-cgi/...".  <code>msg.cgi</code> will override the node configuration.<br/>
+			Read Axis VAPIX documentation for more information.
+			</li>
+			<li><b>HTTP Post:</b><br/>
+			Make VAPIX request that requires post.  Data can be injected with <code>msg.payload</code> if node config data is left blank.
+			</li>
+		</ul>
 	</dl>	
 
 	<dl class="message-properties">

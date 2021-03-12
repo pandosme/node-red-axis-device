@@ -114,20 +114,32 @@ RED.nodes.registerType('axis-camera',{
 <script type="text/x-red" data-help-name="axis-camera">
 	<h3>Inputs:</h3>
 	<dl class="message-properties">
-		<dt>credentials<span class="property-type">configuration</span></dt>
-		<dd>Camera credentials user and password is required.<br/>
-		Use <code>msg.user</code> and <code>msg.password</code> to override config</dd>
-	</dl>	
-	
-	<dl class="message-properties">
-		<dt>address<span class="property-type">string</span></dt>
-		<dd>IP address or FQDN.<br/>
-		Use <code>msg.address</code> to override config</dd>
+		<dt>Camera<span class="property-type">configuration</span></dt>
+		<dd>A preset device with address, user and password that can be reused in multiple nodes without the need to inject with msg<br/>
+		Properties in device can be left empty and optional inject <code>msg.address</code>, <code>msg.user</code> and <code>msg.password</code></dd>
 	</dl>	
 
 	<dl class="message-properties">
 		<dt>Action<span class="property-type">string</span></dt>
 		<dd>Use <code>msg.action</code> to override config</dd>
+		<ul>
+			<li><b>JPEG Image:</b><br/>
+			Captures an image and returns the user selected output format. See resolution below.
+			</li>
+			<li><b>Camera Info:</b><br/>
+			Returns supported media formats, supported resolutions, aspect ration and rotation.
+			</li>
+			<li><b>Get image settings:</b><br/>
+			Get the most common settings such as brightness, colot saturation, contrast, Wide Dynamic Range, White balance and DayLevel (Day/Night switching).<br/>
+			DayLevel = 0 will keep camera in night mode (B/W) and 100 will keep camera in day mode.  All values inbetween will automatically switch depending on current light conditions.  Lower value makes camera enter night mode faster during sunset/dusk.
+			</li>
+			<li><b>Set image settings:</b><br/>
+			Use same structure recieved by Get image settings.  All properites are optional.  You can set one or more.
+			</li>
+			<li><b>Upload overlay:</b><br/>
+			Uploads a JPEG, PNG or BMD image that can be used as overlay in video.  See camera user interface and documentation.
+			</li>
+		</ul>
 	</dl>	
 
 	<dl class="message-properties">
