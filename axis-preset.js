@@ -1,3 +1,5 @@
+//Copyright (c) 2021 Fred Juhlin
+
 module.exports = function(RED) {
 	function Axis_Preset_Node(config) {
 		RED.nodes.createNode(this,config);
