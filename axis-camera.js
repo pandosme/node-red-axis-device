@@ -218,6 +218,7 @@ module.exports = function(RED) {
 	
     RED.nodes.registerType("axis-camera",Axis_Camera,{
 		defaults: {
+			name: { type:"text" },
 			preset: {type:"axis-preset"},
 			action: { type:"text" },
 			resolution: { type:"text" },

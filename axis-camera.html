@@ -48,7 +48,11 @@
             <option value="Buffer">Buffer</option>
 		</select>
 	</div>
-	
+
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="optional">
+    </div>
 </script>
 
 <script type="text/javascript">
@@ -56,6 +60,7 @@ RED.nodes.registerType('axis-camera',{
 	category: 'Axis',
 	color: '#FFCC33',
 	defaults: {
+		name: { value:""},
 		preset: {type:"axis-preset"},
 		action: { value:"JPEG Image"},
 		resolution: { value:"640x360"},
@@ -67,7 +72,7 @@ RED.nodes.registerType('axis-camera',{
 	inputs:1,
 	outputs:1,
 	label: function() {
-		return this.action || "Axis Camera";
+		return this.name || this.action || "Axis Camera";
 	},
 	oneditprepare: function() {
 		$("#node-input-action").change(function() {

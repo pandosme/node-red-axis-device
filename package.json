@@ -1,21 +1,25 @@
 {
   "name": "node-red-contrib-axis-device",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Simplify integration and management of Axis cameras and devices",
   "author": {
     "name": "Fred Juhlin",
     "email": "fred.juhlin@gmail.com"
   },
   "license": "MIT",
+  "deprecated": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pandosme/node-red-axis-device.git"
+  },
+  "homepage": "https://github.com/pandosme/node-red-axis-device",
   "bugs": {
     "url": "https://github.com/pandosme/node-red-axis-device/issues"
   },
   "bundleDependencies": false,
   "dependencies": {
-    "vapix-wrapper": "^1.0.0"
+    "vapix-wrapper": "^1.1.0"
   },
-  "deprecated": false,
-  "homepage": "https://github.com/pandosme/node-red-axis-device",
   "keywords": ["node-red","Axis","Camera","Speaker"],
   "node-red": {
     "nodes": {
@@ -23,10 +27,6 @@
       "axis-device": "axis-device.js",
       "axis-camera": "axis-camera.js"
     }
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/pandosme/node-red-axis-device.git"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

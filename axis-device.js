@@ -208,6 +208,7 @@ module.exports = function(RED) {
 	
     RED.nodes.registerType("axis-device",Axis_Device,{
 		defaults: {
+			name: { type:"text" },
 			preset: {type:"axis-preset"},
 			action: { type:"text" },
 			data: {type: "text"},
